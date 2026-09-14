@@ -3,6 +3,17 @@ import FirebaseAppCheck
 import FirebaseCore
 import GoogleSignIn
 
+/// En Release (TestFlight/App Store) usa App Attest, el proveedor real que ya
+/// está registrado en la consola de App Check. Sin esto, un build sin #if
+/// DEBUG no tiene NINGÚN proveedor de App Check configurado, y con Firestore/
+/// Storage/Auth en modo "Aplicada" eso deja a cualquier usuario real sin poder
+/// leer ni escribir nada.
+final class GSAppCheckProviderFactory: NSObject, AppCheckProviderFactory {
+    func createProvider(with app: FirebaseApp) -> AppCheckProvider? {
+        AppAttestProvider(app: app)
+    }
+}
+
 @main
 struct GiftSquadApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
@@ -15,6 +26,8 @@ struct GiftSquadApp: App {
         )
         #if DEBUG
         AppCheck.setAppCheckProviderFactory(AppCheckDebugProviderFactory())
+        #else
+        AppCheck.setAppCheckProviderFactory(GSAppCheckProviderFactory())
         #endif
         FirebaseApp.configure()
         if let clientID = FirebaseApp.app()?.options.clientID {
