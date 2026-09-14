@@ -152,7 +152,7 @@ interface ExclusionRule {
   toUserId: string;
 }
 
-export const drawSecretSanta = onCall(async (request) => {
+export const drawSecretSanta = onCall({ enforceAppCheck: true }, async (request) => {
   const uid = request.auth?.uid;
   if (!uid) {
     throw new HttpsError("unauthenticated", "Necesitás estar logueado.");
