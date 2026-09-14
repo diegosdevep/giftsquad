@@ -1,0 +1,47 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+*.xcuserdatad/
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+Packages/
+Package.resolved
+.swiftpm/
+
+# CocoaPods (por si llega a usarse)
+Pods/
+*.xcworkspace
+
+# Carthage
+Carthage/Build/
+
+# Firebase / secretos
+GoogleService-Info.plist
+firebase-debug.log
+.firebaserc
+.firebase/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# macOS
+.DS_Store
+
+# Node (Cloud Functions)
+node_modules/
+lib/
+
+# Claude Code (config local, no compartida)
+.claude/settings.local.json

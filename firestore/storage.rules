@@ -1,0 +1,18 @@
+rules_version = '2';
+
+// Fotos de producto subidas por el usuario (distinto del preview automático
+// por link, que no pasa por Storage). Cualquier user autenticado puede leer
+// (los ítems se comparten entre miembros del grupo); solo el dueño del path
+// puede escribir en su propia carpeta.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /items/{ownerId}/{fileName} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null &&
+                      request.auth.uid == ownerId &&
+                      request.resource.size < 8 * 1024 * 1024 &&
+                      request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null && request.auth.uid == ownerId;
+    }
+  }
+}
