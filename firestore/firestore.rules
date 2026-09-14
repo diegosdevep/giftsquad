@@ -30,14 +30,6 @@ service cloud.firestore {
              exists(/databases/$(database)/documents/groups/$(groupId)) &&
              uid() in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
     }
-    function sharesAnyGroup(groupIds) {
-      return groupIds is list &&
-             groupIds.size() > 0 &&
-             // Cualquier grupo donde el usuario sea miembro alcanza.
-             // Firestore rules no permite iterar; comprobamos vía exists().
-             // Se asume que el cliente sólo escribe groupIds donde el dueño es miembro.
-             true;
-    }
     // El dueño de un grupo puede sumar a OTRO usuario a ese grupo (feature "agregar
     // amigo por @usuario/email/código"). Solo se le permite AGREGAR un id de grupo
     // propio a groupIds — nunca borrar entradas ni tocar cualquier otro campo del
