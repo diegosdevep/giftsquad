@@ -1,7 +1,7 @@
 # GiftSquad
 
 App para iPhone que sirve para coordinar regalos entre familia, amigos o pareja.
-Proyecto del Seminario Final de Analista de Sistemas (Escuela Da Vinci), Diego Maidana, 2026.
+Desarrollada por Diego Maidana.
 
 Disponible en la App Store.
 

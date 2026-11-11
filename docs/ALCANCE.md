@@ -1,21 +1,18 @@
-# Documento de Alcance — GiftSquad
+# Alcance de GiftSquad
 
-> Escuela Da Vinci · Analista de Sistemas · Seminario Final
-> Profesora: Lic. Carina Carballido · Alumno: Diego Exequiel Maidana · Mayo 2026
->
 > Este archivo es **referencia**: vive en el repo para mantener visible el alcance acordado y detectar scope creep durante la implementación. La aplicación se desarrolla en SwiftUI + Firebase (iOS nativo).
 
-## 6.1 Nombre y descripción
+## Nombre y descripción
 
 GiftSquad — Plataforma social para la coordinación inteligente de regalos. Aplicación que articula tres modalidades operativas sobre una misma base: listas de deseos compartidas, reserva anónima de regalos y modo Amigo Invisible automatizado. Toda la lógica del sistema preserva un principio rector: **el destinatario nunca conoce quién reservó qué**.
 
-## 6.2 Pilares funcionales
+## Pilares funcionales
 
 - **Pilar 1 — Lista de deseos compartida.** Cada usuario crea su lista personal con productos detallados (nombre, descripción, imagen, precio, link, categoría, prioridad, variantes, alternativas, notas privadas).
 - **Pilar 2 — Reserva anónima.** Los integrantes reservan ítems sin que el dueño los identifique.
 - **Pilar 3 — Modo Amigo Invisible.** Sorteo automático con presupuesto y reglas de exclusión. Cada participante ve solo su asignación.
 
-## 6.3 Alcance del producto — Funcionalidades MVP
+## Alcance del producto — Funcionalidades MVP
 
 | Funcionalidad | Tipo |
 |---|---|
@@ -30,7 +27,7 @@ GiftSquad — Plataforma social para la coordinación inteligente de regalos. Ap
 | Notificaciones | Lógica de negocio |
 | Historial de regalos | Reporte |
 
-## 6.7 Fuera del alcance
+## Fuera del alcance
 
 - Procesamiento de pagos dentro de la app.
 - Compra integrada: la app redirige a la tienda externa, no compra.
