@@ -177,7 +177,7 @@ struct WishlistItemDetailView: View {
                         }
 
                         if isOwner, let errorMessage {
-                            GSBanner(message: errorMessage, isError: true)
+                            GSBanner(message: LocalizedStringKey(stringLiteral: errorMessage), isError: true)
                         }
 
                         if !isOwner {
@@ -210,7 +210,7 @@ struct WishlistItemDetailView: View {
                                     markDeliveredButton
                                 }
                                 if let errorMessage {
-                                    GSBanner(message: errorMessage, isError: true)
+                                    GSBanner(message: LocalizedStringKey(stringLiteral: errorMessage), isError: true)
                                 }
                             } else if let crossGroupLock {
                                 GSBanner(message: crossGroupLockMessage(crossGroupLock), isError: false)
@@ -380,7 +380,7 @@ struct WishlistItemDetailView: View {
         }
     }
 
-    private func crossGroupLockMessage(_ lock: ItemLock) -> String {
+    private func crossGroupLockMessage(_ lock: ItemLock) -> LocalizedStringKey {
         lock.kind == "purchased"
             ? "Ya fue entregado (en otro de tus grupos)."
             : "Ya fue reservado en otro de tus grupos."
@@ -427,7 +427,7 @@ struct WishlistItemDetailView: View {
                 AsyncImage(url: imageURL) { phase in
                     switch phase {
                     case .success(let image):
-                        image.resizable().scaledToFill()
+                        image.resizable().scaledToFit()
                     default:
                         heroPlaceholder
                     }

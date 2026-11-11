@@ -19,7 +19,7 @@ enum GSCurrency: String, CaseIterable, Identifiable {
         }
     }
 
-    var label: String {
+    var label: LocalizedStringKey {
         switch self {
         case .ars: return "Pesos"
         case .usd: return "Dólares"
@@ -130,6 +130,8 @@ struct AddWishlistItemView: View {
                                     .font(GSFont.body(13))
                                     .foregroundStyle(GSPalette.grafito)
                                     .multilineTextAlignment(.center)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .frame(maxWidth: .infinity)
                             }
                         }
                         .frame(maxWidth: .infinity)
@@ -279,7 +281,11 @@ struct AddWishlistItemView: View {
                                             .background(Capsule().fill(GSPalette.alerta))
                                         }
                                         VStack(alignment: .leading, spacing: 8) {
-                                            GSFieldLabel(icon: "dollarsign.circle.fill", iconColor: GSPalette.menta, title: "Precio de oferta")
+                                            GSFieldLabel(
+                                                icon: "dollarsign.circle.fill",
+                                                iconColor: GSPalette.menta,
+                                                title: originalPrice.isEmpty ? "Precio" : "Precio de oferta"
+                                            )
                                             GSPillField(icon: "dollarsign.circle", iconColor: GSPalette.menta) {
                                                 TextField("", text: $price, prompt: gsPlaceholder("Opcional"))
                                                     .keyboardType(.decimalPad)
@@ -374,7 +380,7 @@ struct AddWishlistItemView: View {
                         }
 
                         if let errorMessage {
-                            GSBanner(message: errorMessage, isError: true)
+                            GSBanner(message: LocalizedStringKey(stringLiteral: errorMessage), isError: true)
                         }
 
                         GSPrimaryButton(
@@ -386,8 +392,10 @@ struct AddWishlistItemView: View {
                         }
                     }
                     .padding(20)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .scrollDismissesKeyboard(.interactively)
+                .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

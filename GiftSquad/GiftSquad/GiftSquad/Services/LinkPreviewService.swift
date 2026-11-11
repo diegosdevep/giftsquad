@@ -19,19 +19,61 @@ final class LinkPreviewService {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
         "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
-    func fetch(_ url: URL) async throws -> LinkPreview {
+    
+    private static func acceptLanguage(for url: URL) -> String {
+        let byTLD: [(suffix: String, language: String)] = [
+            (".co.uk", "en-GB,en"), (".com.br", "pt-BR,pt"), (".co.jp", "ja-JP,ja"),
+            (".com.mx", "es-MX,es"), (".com.ar", "es-AR,es"), (".com.au", "en-AU,en"),
+            (".com.tr", "tr-TR,tr"), (".com.be", "fr-BE,nl-BE"), (".com.co", "es-CO,es"),
+            (".de", "de-DE,de"), (".es", "es-ES,es"), (".fr", "fr-FR,fr"),
+            (".it", "it-IT,it"), (".nl", "nl-NL,nl"), (".dk", "da-DK,da"),
+            (".se", "sv-SE,sv"), (".pl", "pl-PL,pl"), (".no", "nb-NO,nb"),
+            (".ch", "de-CH,de"), (".at", "de-AT,de"), (".ie", "en-IE,en"),
+            (".pt", "pt-PT,pt"), (".cl", "es-CL,es"), (".in", "en-IN,en")
+        ]
+        guard let host = url.host?.lowercased() else { return "en-US,en;q=0.9" }
+        
+        for entry in byTLD.sorted(by: { $0.suffix.count > $1.suffix.count })
+        where host.hasSuffix(entry.suffix) {
+            return "\(entry.language);q=0.9,en;q=0.8"
+        }
+        return "en-US,en;q=0.9"
+    }
+
+    private static func esAmazon(_ url: URL?) -> Bool {
+        url?.host?.lowercased().contains("amazon.") ?? false
+    }
+
+    
+    private static func descargar(_ url: URL, marketplace: URL) async throws -> (Data, URLResponse) {
         var request = URLRequest(url: url)
         request.setValue(Self.browserUserAgent, forHTTPHeaderField: "User-Agent")
         request.setValue(
             "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             forHTTPHeaderField: "Accept"
         )
-        request.setValue("es-AR,es;q=0.9,en;q=0.8", forHTTPHeaderField: "Accept-Language")
-        let (data, response) = try await URLSession.shared.data(for: request)
+        request.setValue(Self.acceptLanguage(for: marketplace), forHTTPHeaderField: "Accept-Language")
+        
+        if Self.esAmazon(marketplace), let currency = Self.currencyFromHost(marketplace) {
+            request.httpShouldHandleCookies = false
+            request.setValue("i18n-prefs=\(currency)", forHTTPHeaderField: "Cookie")
+        }
+        return try await URLSession.shared.data(for: request)
+    }
+
+    func fetch(_ url: URL) async throws -> LinkPreview {
+        var (data, response) = try await Self.descargar(url, marketplace: url)
+        var resolvedURL = response.url ?? url
+
+        
+        if Self.esAmazon(resolvedURL), !Self.esAmazon(url) {
+            (data, response) = try await Self.descargar(resolvedURL, marketplace: resolvedURL)
+            resolvedURL = response.url ?? resolvedURL
+        }
+
         guard let html = String(data: data, encoding: .utf8) else {
             return LinkPreview(url: url)
         }
-        let resolvedURL = response.url ?? url
 
         let product = Self.extractJSONLDProduct(html)
         let offer: (price: Double?, currency: String?) = product.map { Self.offerFields(from: $0) } ?? (nil, nil)
@@ -58,16 +100,24 @@ final class LinkPreviewService {
             ?? amazonDescription
         let rawCategory = (product?["category"] as? String) ?? amazonCategory
 
+        let price = offer.price
+            ?? Self.extractMeta(html, property: "product:price:amount").flatMap(Self.parseDecimal)
+            ?? amazonPrice.price
+        
+        let listPrice = amazonOriginalPrice ?? mercadoLibreOriginalPrice
+        let originalPrice = listPrice.flatMap { list in
+            guard let price, list > price else { return nil as Double? }
+            return list
+        }
+
         return LinkPreview(
             url: url,
             title: rawTitle.map { Self.cleanTitle(Self.decodeHTMLEntities($0)) },
             description: rawDescription.map(Self.decodeHTMLEntities),
             imageURL: (jsonImage ?? Self.extractMeta(html, property: "og:image") ?? amazonImage)
                 .flatMap { Self.absoluteURL($0, relativeTo: resolvedURL) },
-            price: offer.price
-                ?? Self.extractMeta(html, property: "product:price:amount").flatMap(Double.init)
-                ?? amazonPrice.price,
-            originalPrice: amazonOriginalPrice ?? mercadoLibreOriginalPrice,
+            price: price,
+            originalPrice: originalPrice,
             currency: offer.currency
                 ?? Self.extractMeta(html, property: "product:price:currency")
                 ?? amazonPrice.currency
@@ -161,61 +211,141 @@ final class LinkPreviewService {
         return dict.max(by: { ($0.value.first ?? 0) < ($1.value.first ?? 0) })?.key
     }
 
+    
+    private static func amazonBuyBoxWindow(_ html: String) -> String {
+        let anchors = [
+            "corePrice_feature_div",
+            "corePrice_desktop",
+            "corePriceDisplay_desktop_feature_div",
+            "apex_desktop"
+        ]
+        for anchor in anchors {
+            guard let anchorRange = html.range(of: "id=\"\(anchor)\"") else { continue }
+            let end = html.index(anchorRange.upperBound, offsetBy: 8000, limitedBy: html.endIndex)
+                ?? html.endIndex
+            return String(html[anchorRange.upperBound..<end])
+        }
+        return html
+    }
+
+    
+    private static func firstAmazonOffscreenNumber(in text: String, regex: NSRegularExpression) -> String? {
+        let range = NSRange(text.startIndex..., in: text)
+        for match in regex.matches(in: text, range: range) {
+            guard let r = Range(match.range(at: 1), in: text) else { continue }
+            let candidate = String(text[r])
+            if candidate.contains(where: \.isNumber) {
+                return candidate
+            }
+        }
+        return nil
+    }
+
+    
+    private static func amazonBuyBoxJSON(_ html: String) -> String? {
+        guard let anchor = html.range(of: "twister-plus-buying-options-price-data") else { return nil }
+        let end = html.index(anchor.upperBound, offsetBy: 3000, limitedBy: html.endIndex) ?? html.endIndex
+        return String(html[anchor.upperBound..<end])
+    }
+
+    private static func firstCapture(_ text: String, _ pattern: String) -> String? {
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        let range = NSRange(text.startIndex..., in: text)
+        guard let match = regex.firstMatch(in: text, range: range),
+              let r = Range(match.range(at: 1), in: text) else { return nil }
+        return String(text[r])
+    }
+
     private static func extractAmazonPrice(_ html: String) -> (price: Double?, currency: String?) {
+        
+        if let blob = Self.amazonBuyBoxJSON(html),
+           let amount = Self.firstCapture(blob, #""priceAmount"\s*:\s*([0-9.]+)"#).flatMap(Double.init) {
+        
+            let currency = Self.firstCapture(blob, #""currencySymbol"\s*:\s*"([^"]+)""#)
+                .flatMap { Self.currencyCode(in: Self.decodeHTMLEntities($0)) }
+            return (amount, currency)
+        }
         guard let regex = try? NSRegularExpression(pattern: #"class="a-offscreen">([^<]+)<"#) else {
             return (nil, nil)
         }
-        let range = NSRange(html.startIndex..., in: html)
-        guard let match = regex.firstMatch(in: html, range: range),
-              let r = Range(match.range(at: 1), in: html) else { return (nil, nil) }
-        return Self.parseAmazonPriceString(String(html[r]))
+        let window = Self.amazonBuyBoxWindow(html)
+        guard let text = Self.firstAmazonOffscreenNumber(in: window, regex: regex) else { return (nil, nil) }
+        return Self.parseAmazonPriceString(text)
     }
 
+    
     private static func extractAmazonOriginalPrice(_ html: String) -> Double? {
-        guard let regex = try? NSRegularExpression(
-            pattern: #"data-a-strike="true"[^>]*>[\s\S]{0,150}?class="a-offscreen">([^<]+)<"#
-        ) else { return nil }
-        let range = NSRange(html.startIndex..., in: html)
-        guard let match = regex.firstMatch(in: html, range: range),
-              let r = Range(match.range(at: 1), in: html) else { return nil }
-        return Self.parseAmazonPriceString(String(html[r])).price
+        guard let anchor = html.range(of: "apex-basisprice-value") else { return nil }
+        let end = html.index(anchor.upperBound, offsetBy: 400, limitedBy: html.endIndex) ?? html.endIndex
+        let window = String(html[anchor.upperBound..<end])
+        guard let regex = try? NSRegularExpression(pattern: #"class="a-offscreen">([^<]+)<"#),
+              let text = Self.firstAmazonOffscreenNumber(in: window, regex: regex) else { return nil }
+        return Self.parseAmazonPriceString(text).price
+    }
+
+    private static func currencyCode(in raw: String) -> String? {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if trimmed.count == 3, trimmed.allSatisfy(\.isLetter) {
+            return trimmed.uppercased()
+        }
+        let bySymbol: [(String, String)] = [
+            ("€", "EUR"), ("£", "GBP"), ("zł", "PLN"), ("₺", "TRY"),
+            ("₹", "INR"), ("¥", "JPY"), ("R$", "BRL"), ("$", "USD")
+        ]
+        for (symbol, code) in bySymbol where trimmed.contains(symbol) {
+            return code
+        }
+        let upper = trimmed.uppercased()
+        for code in ["EUR", "USD", "GBP", "DKK", "SEK", "NOK", "PLN", "CHF"]
+        where upper.contains(code) {
+            return code
+        }
+        
+        return nil
+    }
+
+
+    private static func parseDecimal(_ numeric: String) -> Double? {
+        let hasComma = numeric.contains(",")
+        let hasDot = numeric.contains(".")
+        var s = numeric
+        if hasComma, hasDot {
+            let decimalIsComma = numeric.lastIndex(of: ",")! > numeric.lastIndex(of: ".")!
+            s = s.replacingOccurrences(of: decimalIsComma ? "." : ",", with: "")
+            s = s.replacingOccurrences(of: decimalIsComma ? "," : ".", with: ".")
+        } else if hasComma || hasDot {
+            let separator = hasComma ? "," : "."
+            let parts = s.components(separatedBy: separator)
+            if parts.count > 2 || parts.last?.count == 3 {
+                s = s.replacingOccurrences(of: separator, with: "")
+            } else {
+                s = s.replacingOccurrences(of: separator, with: ".")
+            }
+        }
+        return Double(s)
     }
 
     private static func parseAmazonPriceString(_ rawText: String) -> (price: Double?, currency: String?) {
         let raw = Self.decodeHTMLEntities(rawText).trimmingCharacters(in: .whitespacesAndNewlines)
-
-        let currency: String?
-        if raw.contains("€") { currency = "EUR" }
-        else if raw.contains("$") { currency = "USD" }
-        else if raw.contains("£") { currency = "GBP" }
-        else if raw.uppercased().contains("EUR") { currency = "EUR" }
-        else if raw.uppercased().contains("USD") { currency = "USD" }
-        else if raw.uppercased().contains("GBP") { currency = "GBP" }
-        else { currency = nil }
-
         let numeric = raw.filter { $0.isNumber || $0 == "," || $0 == "." }
-        let normalized: String
-        if let commaIdx = numeric.lastIndex(of: ","), let dotIdx = numeric.lastIndex(of: "."), commaIdx > dotIdx {
-            normalized = numeric.replacingOccurrences(of: ".", with: "").replacingOccurrences(of: ",", with: ".")
-        } else if numeric.contains(",") {
-            normalized = numeric.replacingOccurrences(of: ",", with: ".")
-        } else {
-            normalized = numeric
-        }
-        return (Double(normalized), currency)
+        return (Self.parseDecimal(numeric), Self.currencyCode(in: raw))
     }
 
     private static func currencyFromHost(_ url: URL) -> String? {
         guard let host = url.host?.lowercased() else { return nil }
         let byTLD: [String: String] = [
             "amazon.es": "EUR", "amazon.de": "EUR", "amazon.fr": "EUR",
-            "amazon.it": "EUR", "amazon.nl": "EUR", "amazon.se": "EUR",
-            "amazon.pl": "EUR", "amazon.com.be": "EUR", "amazon.ie": "EUR",
+            "amazon.it": "EUR", "amazon.nl": "EUR", "amazon.com.be": "EUR",
+            "amazon.ie": "EUR",
+            "amazon.se": "SEK", "amazon.pl": "PLN", "amazon.dk": "DKK",
             "amazon.com": "USD", "amazon.ca": "CAD",
             "amazon.co.uk": "GBP",
             "amazon.com.mx": "MXN", "amazon.com.br": "BRL",
             "amazon.co.jp": "JPY", "amazon.in": "INR",
-            "amazon.com.au": "AUD",
+            "amazon.com.au": "AUD", "amazon.com.tr": "TRY",
+            "amazon.ae": "AED", "amazon.sa": "SAR", "amazon.eg": "EGP",
+            "amazon.sg": "SGD",
             "mercadolibre.com.ar": "ARS", "mercadolibre.com.mx": "MXN",
             "mercadolibre.com.co": "COP", "mercadolibre.cl": "CLP",
             "mercadolibre.com.pe": "PEN", "mercadolibre.com.uy": "UYU",
@@ -309,7 +439,7 @@ final class LinkPreviewService {
         let price: Double?
         switch offer["price"] {
         case let n as NSNumber: price = n.doubleValue
-        case let s as String: price = Double(s)
+        case let s as String: price = Self.parseDecimal(s)
         default: price = nil
         }
         return (price, offer["priceCurrency"] as? String)

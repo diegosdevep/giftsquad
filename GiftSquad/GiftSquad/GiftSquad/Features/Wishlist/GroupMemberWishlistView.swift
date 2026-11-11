@@ -95,7 +95,7 @@ struct GroupMemberWishlistView: View {
                 }
             }()
             guard !label.isEmpty else { return nil }
-            return badge(label: label, icon: icon, color: color)
+            return badge(label: LocalizedStringKey(stringLiteral: label), icon: icon, color: color)
         }
         if let itemId = item.id, let lock = crossGroupLocks[itemId] {
             return lock.kind == "purchased"
@@ -105,7 +105,7 @@ struct GroupMemberWishlistView: View {
         return nil
     }
 
-    private func badge(label: String, icon: String, color: Color) -> AnyView {
+    private func badge(label: LocalizedStringKey, icon: String, color: Color) -> AnyView {
         AnyView(
             HStack(spacing: 4) {
                 Image(systemName: icon)

@@ -10,6 +10,8 @@ struct MyWishlistView: View {
     @State private var groupEmojis: [String: String] = [:]
     @State private var itemPendingDelete: WishlistItem?
     @State private var selectedFilter: ListFilter = .all
+    @State private var errorMessage: String?
+    @State private var errorDismissTask: Task<Void, Never>?
 
     private enum ListFilter: Hashable {
         case all
@@ -158,11 +160,35 @@ struct MyWishlistView: View {
             confirmTitle: "Eliminar",
             onConfirm: {
                 if let id = itemPendingDelete?.id {
-                    Task { try? await FirestoreService.shared.archiveItem(id) }
+                    Task {
+                        do {
+                            try await FirestoreService.shared.archiveItem(id)
+                        } catch {
+                            Logger.shared.error("archiveItem: \(error)")
+                            showError(error.localizedDescription)
+                        }
+                    }
                 }
                 itemPendingDelete = nil
             }
         )
+        .safeAreaInset(edge: .bottom) {
+            if let errorMessage {
+                GSBanner(message: LocalizedStringKey(stringLiteral: errorMessage), isError: true)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+            }
+        }
+    }
+
+    private func showError(_ message: String) {
+        errorDismissTask?.cancel()
+        withAnimation { errorMessage = message }
+        errorDismissTask = Task {
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            guard !Task.isCancelled else { return }
+            withAnimation { errorMessage = nil }
+        }
     }
 
     private func heroHeader(waveHeight: CGFloat) -> some View {
@@ -214,7 +240,7 @@ struct MyWishlistView: View {
                         ForEach(groupIdsWithItems, id: \.self) { groupId in
                             let count = items.filter { $0.groupIds.contains(groupId) }.count
                             filterChip(
-                                title: groupNames[groupId] ?? "Grupo",
+                                title: LocalizedStringKey(stringLiteral: groupNames[groupId] ?? "Grupo"),
                                 emoji: groupEmojis[groupId],
                                 count: count,
                                 isSelected: selectedFilter == .group(id: groupId)
@@ -229,7 +255,7 @@ struct MyWishlistView: View {
         }
     }
 
-    private func statChip(value: String, label: String, color: Color, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    private func statChip(value: String, label: LocalizedStringKey, color: Color, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 4) {
                 Text(value)
@@ -254,7 +280,7 @@ struct MyWishlistView: View {
         .buttonStyle(.plain)
     }
 
-    private func filterChip(title: String, emoji: String?, count: Int, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    private func filterChip(title: LocalizedStringKey, emoji: String?, count: Int, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 6) {
                 if let emoji {
@@ -354,7 +380,9 @@ struct WishlistItemRow: View {
                 AsyncImage(url: item.imageURL) { phase in
                     switch phase {
                     case .success(let image):
-                        image.resizable().scaledToFill()
+                        // Fit y no fill: las fotos de producto vienen con el objeto
+                        // centrado y recortarlas deja ver solo la textura del medio.
+                        image.resizable().scaledToFit().padding(5)
                     case .empty, .failure:
                         Image(systemName: "photo")
                             .foregroundStyle(GSPalette.grafito)
@@ -396,7 +424,7 @@ struct WishlistItemRow: View {
                             HStack(spacing: 3) {
                                 Image(systemName: chip.id == "_personal" ? "lock.fill" : "circle.fill")
                                     .font(.system(size: chip.id == "_personal" ? 7 : 5, weight: .bold))
-                                Text(chip.name)
+                                Text(LocalizedStringKey(stringLiteral: chip.name))
                                     .font(GSFont.body(9, weight: .bold))
                                     .lineLimit(1)
                             }
