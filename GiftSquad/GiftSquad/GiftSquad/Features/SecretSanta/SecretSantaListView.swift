@@ -100,7 +100,7 @@ struct SecretSantaListView: View {
 struct SecretSantaEventRow: View {
     let event: SecretSantaEvent
 
-    private var statusInfo: (label: String, icon: String, color: Color) {
+    private var statusInfo: (label: LocalizedStringKey, icon: String, color: Color) {
         switch event.status {
         case .draft: return ("Esperando sorteo", "hourglass", GSPalette.durazno)
         case .drawn: return ("Sorteado", "checkmark.seal.fill", GSPalette.oceano)

@@ -256,7 +256,7 @@ struct GroupDetailView: View {
             HStack(spacing: 6) {
                 Image(systemName: isOwner ? "crown.fill" : "person.2.fill")
                     .font(.system(size: 11, weight: .bold))
-                Text(isOwner ? "Anfitrión" : (ownerName.map { "de \($0)" } ?? "Miembro"))
+                Text(isOwner ? "Anfitrión" : (ownerName.map { LocalizedStringKey("de \($0)") } ?? "Miembro"))
                     .font(GSFont.caption(12))
                 Text("· \(memberLabel)")
                     .font(GSFont.caption(12))

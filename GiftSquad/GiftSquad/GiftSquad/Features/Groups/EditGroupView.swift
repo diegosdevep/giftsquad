@@ -69,7 +69,7 @@ struct EditGroupView: View {
                         }
 
                         if let errorMessage {
-                            GSBanner(message: errorMessage, isError: true)
+                            GSBanner(message: LocalizedStringKey(stringLiteral: errorMessage), isError: true)
                         }
 
                         GSPrimaryButton(

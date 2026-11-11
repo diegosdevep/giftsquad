@@ -54,23 +54,10 @@ struct HistoryView: View {
                     ForEach(groupedEntries, id: \.month) { section in
                         Section {
                             ForEach(section.entries) { entry in
-                                HistoryEntryCard(
-                                    entry: entry,
-                                    imageURL: itemImageURLs[entry.itemId]
-                                )
-                                .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
-                                .listRowSeparator(.hidden)
-                                .listRowBackground(Color.clear)
-                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                    Button(role: .destructive) {
-                                        entryPendingDelete = entry
-                                    } label: {
-                                        Label("Eliminar", systemImage: "trash")
-                                    }
-                                }
+                                fila(for: entry)
                             }
                         } header: {
-                            GSSectionLabel(title: section.month)
+                            GSSectionLabel(title: LocalizedStringKey(stringLiteral: section.month))
                                 .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                                 .listRowBackground(Color.clear)
                                 .textCase(nil)
@@ -99,13 +86,31 @@ struct HistoryView: View {
             title: "¿Eliminar \(entryPendingDelete?.itemName ?? "esta entrega")?",
             message: "Se borra del historial para todo el grupo. No se puede deshacer.",
             confirmTitle: "Eliminar",
-            onConfirm: { Task { await deleteEntry() } }
+            onConfirm: {
+                if let id = entryPendingDelete?.id {
+                    Task { await deleteEntry(id) }
+                }
+            }
         )
         .gsErrorAlert(message: $errorMessage)
     }
 
-    private func deleteEntry() async {
-        guard let id = entryPendingDelete?.id else { return }
+    @ViewBuilder
+    private func fila(for entry: GiftHistoryEntry) -> some View {
+        HistoryEntryCard(entry: entry, imageURL: itemImageURLs[entry.itemId])
+            .listRowInsets(EdgeInsets(top: 5, leading: 16, bottom: 5, trailing: 16))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                Button(role: .destructive) {
+                    entryPendingDelete = entry
+                } label: {
+                    Label("Eliminar", systemImage: "trash")
+                }
+            }
+    }
+
+    private func deleteEntry(_ id: String) async {
         do {
             try await FirestoreService.shared.deleteHistoryEntry(id)
         } catch {
@@ -156,7 +161,7 @@ private struct HistoryEntryCard: View {
                 AsyncImage(url: imageURL) { phase in
                     switch phase {
                     case .success(let image):
-                        image.resizable().scaledToFill()
+                        image.resizable().scaledToFit().padding(5)
                     default:
                         Image(systemName: "gift.fill")
                             .font(.system(size: 20, weight: .semibold))

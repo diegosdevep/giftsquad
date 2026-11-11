@@ -101,7 +101,8 @@ struct AppIntroView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 14) {
-                    ForEach(point.steps, id: \.self) { step in
+                    ForEach(point.steps.indices, id: \.self) { indice in
+                        let step = point.steps[indice]
                         HStack(alignment: .top, spacing: 10) {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.system(size: 15, weight: .semibold))
@@ -131,9 +132,9 @@ struct AppIntroView: View {
         let id: String
         let icon: String
         let tint: Color
-        let title: String
-        let tagline: String
-        let steps: [String]
+        let title: LocalizedStringKey
+        let tagline: LocalizedStringKey
+        let steps: [LocalizedStringKey]
     }
 
     private static let points: [Point] = [

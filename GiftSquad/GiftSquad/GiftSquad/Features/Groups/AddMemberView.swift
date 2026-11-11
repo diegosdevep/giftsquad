@@ -50,7 +50,7 @@ struct AddMemberView: View {
                         }
 
                         if let errorMessage {
-                            GSBanner(message: errorMessage, isError: true)
+                            GSBanner(message: LocalizedStringKey(stringLiteral: errorMessage), isError: true)
                         }
                         if let addedName {
                             GSBanner(message: "Sumaste a \(addedName) al grupo.", isError: false)

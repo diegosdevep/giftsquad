@@ -131,7 +131,7 @@ struct SecretSantaDetailView: View {
                     }
 
                     if let errorMessage {
-                        GSBanner(message: errorMessage, isError: true)
+                        GSBanner(message: LocalizedStringKey(stringLiteral: errorMessage), isError: true)
                     }
 
                     if isOrganizer, event.status == .draft {
@@ -224,7 +224,7 @@ struct SecretSantaDetailView: View {
                     }
 
                     if let errorMessage {
-                        GSBanner(message: errorMessage, isError: true)
+                        GSBanner(message: LocalizedStringKey(stringLiteral: errorMessage), isError: true)
                     }
 
                     GSPrimaryButton(
@@ -379,14 +379,15 @@ struct SecretSantaDetailView: View {
         }
     }
 
-    private func personPicker(title: String, selection: Binding<String?>) -> some View {
+    private func personPicker(title: LocalizedStringKey, selection: Binding<String?>) -> some View {
         Menu {
             ForEach(participants, id: \.id) { person in
                 Button(person.displayName) { selection.wrappedValue = person.id }
             }
         } label: {
             HStack(spacing: 4) {
-                Text(participants.first(where: { $0.id == selection.wrappedValue })?.displayName ?? title)
+                Text((participants.first(where: { $0.id == selection.wrappedValue })?.displayName)
+                        .map { LocalizedStringKey(stringLiteral: $0) } ?? title)
                     .lineLimit(1)
                 Image(systemName: "chevron.down")
                     .font(.system(size: 10, weight: .bold))
@@ -431,7 +432,7 @@ struct SecretSantaDetailView: View {
         }
     }
 
-    private var subtitleForShareRow: String {
+    private var subtitleForShareRow: LocalizedStringKey {
         if myItemsCount == 0 { return "Todavía no tenés nada en tu lista" }
         if mySharedItemIds.isEmpty {
             return "Tenés \(myItemsCount) \(myItemsCount == 1 ? "producto" : "productos") — elegí cuáles quiere ver quien te toque"
@@ -475,7 +476,7 @@ struct SecretSantaDetailView: View {
         }
     }
 
-    private func infoRow(label: String, value: String) -> some View {
+    private func infoRow(label: LocalizedStringKey, value: String) -> some View {
         HStack {
             Text(label)
                 .font(GSFont.body(14))
@@ -644,7 +645,7 @@ private struct SharedGiftItemRow: View {
                 AsyncImage(url: item.imageURL) { phase in
                     switch phase {
                     case .success(let image):
-                        image.resizable().scaledToFill()
+                        image.resizable().scaledToFit().padding(4)
                     default:
                         Image(systemName: "gift")
                             .foregroundStyle(GSPalette.grafito)
@@ -729,7 +730,7 @@ private struct ShareGiftListPicker: View {
                             }
 
                             if let errorMessage {
-                                GSBanner(message: errorMessage, isError: true)
+                                GSBanner(message: LocalizedStringKey(stringLiteral: errorMessage), isError: true)
                             }
 
                             GSPrimaryButton(
@@ -773,7 +774,7 @@ private struct ShareGiftListPicker: View {
                     AsyncImage(url: item.imageURL) { phase in
                         switch phase {
                         case .success(let image):
-                            image.resizable().scaledToFill()
+                            image.resizable().scaledToFit().padding(4)
                         default:
                             Image(systemName: "photo")
                                 .font(.system(size: 14))

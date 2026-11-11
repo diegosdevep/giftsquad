@@ -149,7 +149,7 @@ private struct EventReservationRow: View {
                 AsyncImage(url: preview.item?.imageURL) { phase in
                     switch phase {
                     case .success(let image):
-                        image.resizable().scaledToFill()
+                        image.resizable().scaledToFit().padding(5)
                     default:
                         Image(systemName: "gift")
                             .foregroundStyle(GSPalette.grafito)

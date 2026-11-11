@@ -76,7 +76,7 @@ struct GroupOnboardingView: View {
                     }
 
                     if let errorMessage {
-                        GSBanner(message: errorMessage, isError: true)
+                        GSBanner(message: LocalizedStringKey(stringLiteral: errorMessage), isError: true)
                     }
 
                     Spacer(minLength: 140)
@@ -120,7 +120,7 @@ struct GroupOnboardingView: View {
                 } else {
                     Text(chip.emoji).font(.system(size: 15))
                 }
-                Text(chip.name)
+                Text(LocalizedStringKey(stringLiteral: chip.name))
                     .font(GSFont.body(15, weight: .semibold))
                 if chip.isCustom {
                     Button {

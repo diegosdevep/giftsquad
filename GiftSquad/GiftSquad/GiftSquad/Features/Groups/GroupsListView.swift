@@ -129,7 +129,9 @@ struct GroupsListView: View {
                 }
                 .buttonStyle(.plain)
             }
-            ToolbarSpacer(.fixed, placement: .topBarTrailing)
+            if #available(iOS 26.0, *) {
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button("Crear grupo", systemImage: "person.3.fill") { showCreate = true }
@@ -208,7 +210,7 @@ struct GroupsListView: View {
         return name.split(separator: " ").first.map(String.init) ?? name
     }
 
-    private var greetingSubtitle: String {
+    private var greetingSubtitle: LocalizedStringKey {
         if groups.isEmpty { return "Armemos tu primer grupo" }
         if !groupRecentItems.isEmpty {
             return groupRecentItems.count == 1 ? "Hay 1 idea nueva en tus grupos" : "Hay \(groupRecentItems.count) ideas nuevas en tus grupos"
@@ -287,7 +289,7 @@ struct GroupsListView: View {
         }
     }
 
-    private func groupSection(title: String, groups: [GiftGroup]) -> some View {
+    private func groupSection(title: LocalizedStringKey, groups: [GiftGroup]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             GSSectionLabel(title: title)
             ScrollView(.horizontal, showsIndicators: false) {
@@ -333,7 +335,7 @@ struct GroupsListView: View {
         }
     }
 
-    private func statChip(icon: String, color: Color, value: String, label: String) -> some View {
+    private func statChip(icon: String, color: Color, value: String, label: LocalizedStringKey) -> some View {
         VStack(spacing: 8) {
             ZStack {
                 RoundedRectangle(cornerRadius: 9, style: .continuous)
@@ -512,7 +514,7 @@ private struct HomeGroupItemCard: View {
                 AsyncImage(url: item.imageURL) { phase in
                     switch phase {
                     case .success(let image):
-                        image.resizable().scaledToFill()
+                        image.resizable().scaledToFit().padding(5)
                     case .empty:
                         GSSkeleton(cornerRadius: 14)
                     default:
@@ -598,9 +600,12 @@ private struct GroupCircleTile: View {
         guard let ownerName else { return nil }
         return ownerName.split(separator: " ").first.map(String.init) ?? ownerName
     }
+    // Va interpolado dentro de otro Text, así que tiene que resolverse acá a
+    // String: una LocalizedStringKey metida en otra se imprime como su descripción.
     private var roleText: String {
-        if isOwner { return "Anfitrión" }
-        return ownerFirstName.map { "de \($0)" } ?? "Miembro"
+        if isOwner { return LanguageService.t("Anfitrión") }
+        guard let ownerFirstName else { return LanguageService.t("Miembro") }
+        return String(format: LanguageService.t("de %@"), ownerFirstName)
     }
 
     var body: some View {
