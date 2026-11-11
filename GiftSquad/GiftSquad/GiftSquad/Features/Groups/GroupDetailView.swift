@@ -180,7 +180,11 @@ struct GroupDetailView: View {
         .task { await loadMembers() }
         .refreshable { await loadMembers() }
         .sheet(isPresented: $showShare) {
-            ShareSheet(items: ["Sumate a \(group.name) en GiftSquad con el código \(group.inviteCode)"])
+            ShareSheet(
+                text: GSShare.invitacionGrupo(nombre: group.name, codigo: group.inviteCode),
+                title: LanguageService.t("Invitación a \(group.name)"),
+                subtitle: LanguageService.t("Código: \(group.inviteCode)")
+            )
         }
         .sheet(isPresented: $showAddMember, onDismiss: { Task { await loadMembers() } }) {
             AddMemberView(group: group)
@@ -367,10 +371,3 @@ private struct GroupMemberTile: View {
     }
 }
 
-struct ShareSheet: UIViewControllerRepresentable {
-    let items: [Any]
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
-    }
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
-}

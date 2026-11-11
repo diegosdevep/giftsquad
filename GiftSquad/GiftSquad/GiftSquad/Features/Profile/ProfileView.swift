@@ -221,7 +221,11 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showShareCode) {
             if let code = auth.appUser?.friendCode {
-                ShareSheet(items: ["Agregame en GiftSquad con mi código: \(code)"])
+                ShareSheet(
+                    text: GSShare.codigoAmigo(code),
+                    title: LanguageService.t("Mi código de amigo en GiftSquad"),
+                    subtitle: LanguageService.t("Código: \(code)")
+                )
             }
         }
         .gsConfirmDialog(
