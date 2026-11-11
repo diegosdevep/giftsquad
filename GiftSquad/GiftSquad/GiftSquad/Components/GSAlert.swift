@@ -60,12 +60,12 @@ private struct GSAlertModifier<AlertContent: View>: ViewModifier {
 struct GSAlertDialog: View {
     var icon: String
     var iconTint: Color = GSPalette.oceano
-    var title: String
-    var message: String? = nil
-    var confirmTitle: String
+    var title: LocalizedStringKey
+    var message: LocalizedStringKey? = nil
+    var confirmTitle: LocalizedStringKey
     var confirmIsDestructive: Bool = false
     var confirmAction: () -> Void
-    var cancelTitle: String? = "Cancelar"
+    var cancelTitle: LocalizedStringKey? = "Cancelar"
     var cancelAction: (() -> Void)? = nil
 
     var body: some View {
@@ -144,10 +144,10 @@ extension View {
         isPresented: Binding<Bool>,
         icon: String,
         iconTint: Color = GSPalette.alerta,
-        title: String,
-        message: String,
-        confirmTitle: String,
-        cancelTitle: String = "Cancelar",
+        title: LocalizedStringKey,
+        message: LocalizedStringKey,
+        confirmTitle: LocalizedStringKey,
+        cancelTitle: LocalizedStringKey = "Cancelar",
         isDestructive: Bool = true,
         onConfirm: @escaping () -> Void
     ) -> some View {
@@ -159,9 +159,10 @@ extension View {
                 message: message,
                 confirmTitle: confirmTitle,
                 confirmIsDestructive: isDestructive,
+
                 confirmAction: {
-                    isPresented.wrappedValue = false
                     onConfirm()
+                    isPresented.wrappedValue = false
                 },
                 cancelTitle: cancelTitle,
                 cancelAction: { isPresented.wrappedValue = false }
@@ -179,7 +180,7 @@ extension View {
                 icon: "exclamationmark.triangle.fill",
                 iconTint: GSPalette.alerta,
                 title: "Algo salió mal",
-                message: message.wrappedValue ?? "",
+                message: LocalizedStringKey(stringLiteral: message.wrappedValue ?? ""),
                 confirmTitle: "Entendido",
                 confirmIsDestructive: false,
                 confirmAction: { message.wrappedValue = nil },

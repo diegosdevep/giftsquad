@@ -96,7 +96,7 @@ struct GSBottomWave: Shape {
 }
 
 struct GSBanner: View {
-    let message: String
+    let message: LocalizedStringKey
     let isError: Bool
 
     var body: some View {
@@ -119,7 +119,7 @@ struct GSBanner: View {
 }
 
 struct GSSwitchLink: View {
-    let title: String
+    let title: LocalizedStringKey
     let action: () -> Void
 
     var body: some View {
@@ -133,7 +133,7 @@ struct GSSwitchLink: View {
 }
 
 struct GSPrimaryButton: View {
-    let title: String
+    let title: LocalizedStringKey
     let isLoading: Bool
     let isEnabled: Bool
     let action: () -> Void
@@ -196,21 +196,21 @@ struct GSUnderlineField<Content: View>: View {
     }
 }
 
-func gsPlaceholder(_ text: String) -> Text {
+func gsPlaceholder(_ text: LocalizedStringKey) -> Text {
     Text(text).foregroundStyle(GSPalette.grafito.opacity(0.6))
 }
 
 struct GSFieldLabel: View {
     let icon: String
     var iconColor: Color = GSPalette.grafito
-    let title: String
+    let title: LocalizedStringKey
 
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
                 .font(.system(size: 10, weight: .bold))
                 .foregroundStyle(iconColor)
-            Text(title.uppercased())
+            Text(title).textCase(.uppercase)
                 .font(GSFont.caption(11))
                 .tracking(1)
         }
@@ -245,10 +245,10 @@ struct GSPillField<Content: View>: View {
 }
 
 struct GSSectionLabel: View {
-    let title: String
+    let title: LocalizedStringKey
 
     var body: some View {
-        Text(title.uppercased())
+        Text(title).textCase(.uppercase)
             .font(GSFont.caption(12))
             .tracking(1.2)
             .foregroundStyle(GSPalette.grafito)
@@ -290,8 +290,8 @@ extension View {
 struct GSRow: View {
     let icon: String
     let iconColor: Color
-    let title: String
-    var subtitle: String? = nil
+    let title: LocalizedStringKey
+    var subtitle: LocalizedStringKey? = nil
     var showChevron: Bool = true
     var photoURL: URL? = nil
 
@@ -364,7 +364,16 @@ private struct GSDisableInteractivePop: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
         DispatchQueue.main.async {
-            uiViewController.navigationController?.interactivePopGestureRecognizer?.isEnabled = false
+            guard let nav = uiViewController.navigationController else { return }
+            nav.interactivePopGestureRecognizer?.isEnabled = false
+            // UIKit registra un segundo gesto de retroceso, el de arrastrar desde
+            // cualquier punto de la pantalla, que no se expone por
+            // `interactivePopGestureRecognizer`. Si queda activo, el contenido se
+            // puede arrastrar de costado y vuelve solo.
+            for gesto in nav.view.gestureRecognizers ?? []
+            where String(describing: type(of: gesto)).contains("ParallaxTransition") {
+                gesto.isEnabled = false
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import FirebaseFirestore
 
 enum ReservationStatus: String, Codable {
@@ -6,7 +7,7 @@ enum ReservationStatus: String, Codable {
     case purchased
     case released
 
-    var message: String {
+    var message: LocalizedStringKey {
         switch self {
         case .reserved: return "Reservado por alguien del grupo."
         case .purchased: return "Ya fue entregado."

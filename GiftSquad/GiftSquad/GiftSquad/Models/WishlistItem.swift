@@ -6,7 +6,7 @@ enum ItemPriority: String, Codable, CaseIterable, Identifiable {
     case low, medium, wantALot, high
     var id: String { rawValue }
 
-    var label: String {
+    var label: LocalizedStringKey {
         switch self {
         case .low: return "Me gustaría"
         case .medium: return "Lo quiero"
@@ -104,8 +104,7 @@ struct WishlistItem: Codable, Identifiable, Hashable {
     }
 }
 
-/// Vive en /items/{itemId}/private/notes, no como campo del ítem, para que
-/// solo el dueño pueda leerlas (ver firestore.rules).
+
 struct ItemPrivateNotes: Codable {
     var text: String
 }
