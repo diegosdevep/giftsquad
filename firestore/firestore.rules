@@ -67,14 +67,12 @@ service cloud.firestore {
       allow create: if isSignedIn() &&
                        request.resource.data.ownerId == uid() &&
                        uid() in request.resource.data.memberIds;
-      // Permitir que cualquier user se sume a sí mismo (joinGroup); el owner puede
-      // editar metadata. Para evitar abuso, solo se aceptan cambios que SUMEN al
-      // usuario actual o que el owner ejecute.
+      // El owner edita libremente. Un miembro solo puede sacarse a sí mismo
+      // (leaveGroup) sin tocar ningún otro campo. Sumarse por código pasa por la
+      // Cloud Function joinGroupByCode, que corre con permisos de admin.
       allow update: if isSignedIn() && (
-        // owner edita libremente
         uid() == resource.data.ownerId ||
-        // el propio user se suma o se va
-        (request.resource.data.memberIds.hasOnly(resource.data.memberIds.concat([uid()])) ||
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds']) &&
          request.resource.data.memberIds == resource.data.memberIds.removeAll([uid()]))
       );
       allow delete: if isSignedIn() && uid() == resource.data.ownerId;
