@@ -1,5 +1,6 @@
 import Foundation
 import FirebaseFirestore
+import FirebaseFunctions
 
 @MainActor
 final class FirestoreService {
@@ -118,23 +119,15 @@ extension FirestoreService {
     }
 
     func joinGroup(inviteCode: String, userId: String) async throws -> GiftGroup {
-        let snap = try await groups()
-            .whereField("inviteCode", isEqualTo: inviteCode)
-            .limit(to: 1)
-            .getDocuments()
-        guard let doc = snap.documents.first,
-              var group = try? doc.data(as: GiftGroup.self),
-              let groupId = group.id else {
+        let groupId: String
+        do {
+            groupId = try await FunctionsService.shared.joinGroupByCode(inviteCode)
+        } catch let error as NSError where error.domain == FunctionsErrorDomain
+            && error.code == FunctionsErrorCode.notFound.rawValue {
             throw AppError.firestore("Código de invitación inválido")
         }
-        if !group.memberIds.contains(userId) {
-            group.memberIds.append(userId)
-            try self.group(groupId).setData(from: group, merge: true)
-        }
-        try await user(userId).updateData([
-            "groupIds": FieldValue.arrayUnion([groupId])
-        ])
-        return group
+        // Ya somos miembros, así que las reglas nos dejan leer el grupo.
+        return try await group(groupId).getDocument().data(as: GiftGroup.self)
     }
 
     func updateGroup(_ groupId: String, name: String, emoji: String) async throws {
@@ -295,8 +288,7 @@ extension FirestoreService {
         try await historyEntry(id).delete()
     }
 
-    /// ANONIMATO: /history/{id}/givers/{uid} solo es legible por ese uid — es la
-    /// única forma de saber si vos aportaste a un regalo ya entregado.
+    
     func didIContribute(toHistoryEntry entryId: String, uid: String) async throws -> Bool {
         try await historyEntry(entryId).collection("givers").document(uid).getDocument().exists
     }

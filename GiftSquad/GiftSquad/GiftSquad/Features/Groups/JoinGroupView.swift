@@ -26,7 +26,7 @@ struct JoinGroupView: View {
                         }
 
                         if let errorMessage {
-                            GSBanner(message: errorMessage, isError: true)
+                            GSBanner(message: LocalizedStringKey(stringLiteral: errorMessage), isError: true)
                         }
                         if let joinedGroup {
                             GSBanner(message: "Te sumaste a \(joinedGroup.name).", isError: false)
