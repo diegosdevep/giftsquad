@@ -47,19 +47,6 @@ docs/
 └── ALCANCE.md         # alcance del proyecto
 ```
 
-## Historial del proyecto
-
-| Fecha | Etapa |
-|---|---|
-| Mayo 2026 | Idea, alcance y entrega del TP1 |
-| Junio 2026 | Requisitos, casos de uso y propuesta final |
-| Julio – agosto 2026 | Diseño de pantallas y modelo de datos |
-| Agosto – septiembre 2026 | Desarrollo de la app y del backend |
-| 27/09/2026 | Primera versión (1.0) subida a App Store Connect |
-| 10/10/2026 | Versión 1.0.2 con correcciones |
-| 13/10/2026 | App aprobada y publicada en la App Store |
-| Noviembre 2026 | Versión 1.0.3 y documentación final |
-
 ## Cómo correrlo
 
 Ver [SETUP.md](./SETUP.md).
