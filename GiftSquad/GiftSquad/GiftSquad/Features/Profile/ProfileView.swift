@@ -3,9 +3,12 @@ import FirebaseAuth
 
 struct ProfileView: View {
     @State private var auth = AuthService.shared
+    @State private var language = LanguageService.shared
     @State private var errorMessage: String?
     @State private var showEditUsername = false
     @State private var showShareCode = false
+    @State private var showDeleteAccount = false
+    @State private var isDeletingAccount = false
 
     var body: some View {
         GeometryReader { geo in
@@ -108,6 +111,35 @@ struct ProfileView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
+                        GSSectionLabel(title: "Idioma")
+                        GSCard {
+                            ForEach(Array(GSLanguage.allCases.enumerated()), id: \.element.id) { indice, idioma in
+                                if indice > 0 { GSDivider() }
+                                Button {
+                                    language.selection = idioma
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        Text(idioma.flag).font(.system(size: 20))
+                                        Text(idioma.displayName)
+                                            .font(GSFont.body(15, weight: .semibold))
+                                            .foregroundStyle(GSPalette.noche)
+                                        Spacer()
+                                        if language.selection == idioma {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 13, weight: .bold))
+                                                .foregroundStyle(GSPalette.mandarina)
+                                        }
+                                    }
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 14)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 8) {
                         GSSectionLabel(title: "Acerca de")
                         GSCard {
                             HStack {
@@ -121,11 +153,6 @@ struct ProfileView: View {
                             }
                             .padding(.horizontal, 14)
                             .padding(.vertical, 14)
-                            GSDivider()
-                            Link(destination: URL(string: "https://github.com/")!) {
-                                GSRow(icon: "doc.text", iconColor: GSPalette.grafito, title: "Documento de alcance")
-                            }
-                            .buttonStyle(.plain)
                         }
                     }
 
@@ -145,6 +172,21 @@ struct ProfileView: View {
                             )
                         }
                         .buttonStyle(.plain)
+                        GSDivider()
+                        Button(role: .destructive) {
+                            showDeleteAccount = true
+                        } label: {
+                            GSRow(
+                                icon: "person.crop.circle.badge.xmark",
+                                iconColor: GSPalette.alerta,
+                                title: "Eliminar mi cuenta",
+                                subtitle: "Borra tu cuenta y tus datos para siempre",
+                                showChevron: false
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(isDeletingAccount)
+                        .opacity(isDeletingAccount ? 0.5 : 1)
                     }
 
                     VStack(spacing: 8) {
@@ -161,7 +203,7 @@ struct ProfileView: View {
                     .padding(.top, 4)
 
                     if let errorMessage {
-                        GSBanner(message: errorMessage, isError: true)
+                        GSBanner(message: LocalizedStringKey(stringLiteral: errorMessage), isError: true)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -178,6 +220,28 @@ struct ProfileView: View {
             if let code = auth.appUser?.friendCode {
                 ShareSheet(items: ["Agregame en GiftSquad con mi código: \(code)"])
             }
+        }
+        .gsConfirmDialog(
+            isPresented: $showDeleteAccount,
+            icon: "person.crop.circle.badge.xmark",
+            title: "¿Eliminar tu cuenta?",
+            message: "Se borran tu perfil, tu lista de deseos y tus reservas. Los grupos que creaste se eliminan para todos, pero nadie pierde sus productos: vuelven a su lista privada. No se puede deshacer.",
+            confirmTitle: "Eliminar cuenta",
+            onConfirm: { Task { await deleteAccount() } }
+        )
+        .gsErrorAlert(message: $errorMessage)
+    }
+
+    private func deleteAccount() async {
+        isDeletingAccount = true
+        defer { isDeletingAccount = false }
+        do {
+            try await FunctionsService.shared.deleteAccount()
+            // La cuenta de Auth ya no existe: el signOut local es solo para que
+            // el listener dispare y la app vuelva al login sin esperar.
+            try? AuthService.shared.signOut()
+        } catch {
+            errorMessage = error.localizedDescription
         }
     }
 
@@ -259,7 +323,7 @@ private struct EditUsernameView: View {
                         }
 
                         if let errorMessage {
-                            GSBanner(message: errorMessage, isError: true)
+                            GSBanner(message: LocalizedStringKey(stringLiteral: errorMessage), isError: true)
                         }
 
                         GSPrimaryButton(
