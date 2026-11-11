@@ -1,51 +1,65 @@
 # GiftSquad
 
-Aplicación iOS nativa para la coordinación inteligente de regalos.
-Seminario Final — Escuela Da Vinci — Diego Maidana, 2026.
+App para iPhone que sirve para coordinar regalos entre familia, amigos o pareja.
+Proyecto del Seminario Final de Analista de Sistemas (Escuela Da Vinci), Diego Maidana, 2026.
 
-## Propuesta
+Disponible en la App Store.
 
-GiftSquad articula tres modalidades sobre una misma base, preservando un principio rector: **el destinatario nunca sabe quién reservó qué, ni quién aportó cuánto**.
+## Qué hace
 
-- **Pilar 1 — Lista de deseos compartida.** Cada usuario crea su lista con productos detallados y la comparte con su grupo.
-- **Pilar 2 — Reserva anónima + Vaquita digital.** Los integrantes reservan ítems sin que el dueño los identifique. Para regalos costosos varios usuarios juntan plata vía vaquita con chat privado.
-- **Pilar 3 — Amigo Invisible.** Sorteo automático con presupuesto y reglas de exclusión; cada participante ve solo su asignación.
+La idea principal es que **quien recibe un regalo nunca sepa quién se lo reservó**.
 
-## Stack
+- **Lista de deseos:** cada usuario arma su lista con productos (nombre, foto, precio, link, prioridad). Al pegar el link de un producto, la app completa los datos sola.
+- **Grupos:** se crean grupos y se invita a otras personas con un código. Cada miembro ve las listas de los demás.
+- **Reserva anónima:** un miembro reserva un regalo de la lista de otro. El resto del grupo lo ve como reservado, pero el dueño de la lista no.
+- **Amigo Invisible:** sorteo automático con tope de gasto y exclusiones. Cada participante ve solo a quién le regala.
+- **Historial y avisos:** los regalos entregados quedan en el historial del grupo, y la app manda notificaciones.
 
-- **iOS:** SwiftUI, iOS 17+, Swift 5.10
+## Tecnologías
+
+- **App:** Swift y SwiftUI, iOS 17.6 o superior.
 - **Backend:** Firebase
-  - Auth (email/password + Sign in with Google)
-  - Cloud Firestore (modelo de datos + reglas que sostienen el anonimato)
-  - Cloud Functions (sorteo Amigo Invisible, lógica sensible)
+  - Authentication (Sign in with Apple y Google)
+  - Cloud Firestore, con reglas de seguridad que garantizan el anonimato
+  - Cloud Functions en TypeScript (sorteo, bloqueo de reservas, historial, avisos, unirse con código y eliminar cuenta)
+  - Cloud Storage (fotos de los ítems)
   - Cloud Messaging (notificaciones push)
-- **Dependencias:** vía Swift Package Manager
-- **Open Graph fetch:** `URLSession` + parser HTML mínimo en `LinkPreviewService`
+  - App Check con App Attest
+- **Idiomas:** español e inglés.
 
 ## Estructura
 
 ```
-GiftSquad/
-├── GiftSquad/                    # código fuente Swift
-│   ├── App/                      # entry point + navegación raíz
-│   ├── Features/                 # una carpeta por pilar / módulo
-│   ├── Models/                   # modelos Codable alineados a Firestore
-│   ├── Services/                 # wrappers de Firebase y APIs externas
-│   ├── Components/               # vistas reutilizables
-│   ├── Utils/
-│   └── Resources/                # Assets.xcassets, Info.plist, GoogleService-Info.plist
-├── firestore/                    # reglas de seguridad + índices
-│   ├── firestore.rules
-│   └── firestore.indexes.json
-├── docs/
-│   └── ALCANCE.md                # documento de alcance del seminario (referencia)
-└── SETUP.md                      # pasos para abrir el proyecto en Xcode la primera vez
+GiftSquad/GiftSquad/
+├── GiftSquad.xcodeproj
+└── GiftSquad/
+    ├── App/           # arranque y navegación
+    ├── Features/      # pantallas, una carpeta por módulo
+    ├── Models/        # modelos de datos
+    ├── Services/      # acceso a Firebase y a las tiendas
+    ├── Components/    # componentes visuales reutilizables
+    └── Utils/
+firestore/
+├── firestore.rules    # reglas de seguridad de la base
+├── storage.rules      # reglas de las fotos
+└── functions/         # Cloud Functions
+docs/
+└── ALCANCE.md         # alcance del proyecto
 ```
 
-## Primer arranque
+## Historial del proyecto
 
-Ver [SETUP.md](./SETUP.md) — pasos para crear el target en Xcode, agregar el Firebase SDK por SPM, descargar `GoogleService-Info.plist` y correr la app por primera vez.
+| Fecha | Etapa |
+|---|---|
+| Mayo 2026 | Idea, alcance y entrega del TP1 |
+| Junio 2026 | Requisitos, casos de uso y propuesta final |
+| Julio – agosto 2026 | Diseño de pantallas y modelo de datos |
+| Agosto – septiembre 2026 | Desarrollo de la app y del backend |
+| 27/09/2026 | Primera versión (1.0) subida a App Store Connect |
+| 10/10/2026 | Versión 1.0.2 con correcciones |
+| 13/10/2026 | App aprobada y publicada en la App Store |
+| Noviembre 2026 | Versión 1.0.3 y documentación final |
 
-## Estado
+## Cómo correrlo
 
-Scaffold inicial. Modelos, servicios y vistas creados como esqueleto; falta cablear Firestore listeners, completar UI de cada pilar y desplegar Cloud Functions.
+Ver [SETUP.md](./SETUP.md).
