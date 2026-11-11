@@ -14,6 +14,8 @@ final class AuthService {
 
     private(set) var currentUser: FirebaseAuth.User?
     private(set) var appUser: AppUser?
+    
+    private(set) var isRestoringSession = true
     private var authHandle: AuthStateDidChangeListenerHandle?
     private var pendingLinkCredential: AuthCredential?
 
@@ -35,6 +37,8 @@ final class AuthService {
                 } else {
                     self?.appUser = nil
                 }
+                if user != nil { await LanguageService.shared.publicarIdioma() }
+                self?.isRestoringSession = false
             }
         }
     }
@@ -169,7 +173,12 @@ final class AuthService {
     func completeGroupOnboarding(selected: [(name: String, emoji: String)]) async {
         guard let uid = currentUserId else { return }
         for (name, emoji) in selected {
-            let group = GiftGroup(name: name, emoji: emoji, ownerId: uid, memberIds: [uid])
+           
+            let nombre = String(
+                localized: String.LocalizationValue(name),
+                locale: LanguageService.shared.locale
+            )
+            let group = GiftGroup(name: nombre, emoji: emoji, ownerId: uid, memberIds: [uid])
             do {
                 _ = try await FirestoreService.shared.createGroup(group)
             } catch {
