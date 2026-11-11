@@ -102,7 +102,7 @@ struct ProfileView: View {
                             .buttonStyle(.plain)
                             GSDivider()
                             NavigationLink {
-                                Text("Notificaciones (pendiente)")
+                                NotificationSettingsView()
                             } label: {
                                 GSRow(icon: "bell.badge", iconColor: GSPalette.mandarina, title: "Preferencias de notificaciones")
                             }
