@@ -1,6 +1,7 @@
 import SwiftUI
 import FirebaseAppCheck
 import FirebaseCore
+import FirebaseMessaging
 import GoogleSignIn
 
 
@@ -59,5 +60,15 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
+        // Le pasa a Firebase la dirección de este iPhone en Apple (APNs).
+        // Con eso Firebase genera el token que se guarda en el usuario.
+        Messaging.messaging().apnsToken = deviceToken
+    }
+
+    func application(
+        _ application: UIApplication,
+        didFailToRegisterForRemoteNotificationsWithError error: Error
+    ) {
+        print("No se pudo registrar para notificaciones: \(error)")
     }
 }

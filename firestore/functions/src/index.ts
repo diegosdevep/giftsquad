@@ -122,7 +122,15 @@ async function notifyUsers(
 
   for (const [idioma, tokens] of tokensPorIdioma) {
     const notification = render(mensaje, idioma, params);
-    await getMessaging().sendEachForMulticast({ tokens, notification });
+    const res = await getMessaging().sendEachForMulticast({
+      tokens,
+      notification,
+      // Sin "sound", el iPhone muestra el aviso en silencio y sin vibrar.
+      apns: { payload: { aps: { sound: "default" } } },
+    });
+    res.responses.forEach((r, i) => {
+      if (!r.success) console.error(`push fallido (${mensaje}) token#${i}:`, r.error?.code, r.error?.message);
+    });
   }
 }
 

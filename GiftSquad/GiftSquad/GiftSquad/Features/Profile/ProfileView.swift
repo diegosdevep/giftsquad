@@ -158,10 +158,13 @@ struct ProfileView: View {
 
                     GSCard {
                         Button(role: .destructive) {
-                            do {
-                                try AuthService.shared.signOut()
-                            } catch {
-                                errorMessage = error.localizedDescription
+                            Task {
+                                await MessagingService.shared.unregisterForSignOut()
+                                do {
+                                    try AuthService.shared.signOut()
+                                } catch {
+                                    errorMessage = error.localizedDescription
+                                }
                             }
                         } label: {
                             GSRow(

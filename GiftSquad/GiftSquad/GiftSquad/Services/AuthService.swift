@@ -37,7 +37,11 @@ final class AuthService {
                 } else {
                     self?.appUser = nil
                 }
-                if user != nil { await LanguageService.shared.publicarIdioma() }
+                if user != nil {
+                    await LanguageService.shared.publicarIdioma()
+                    // El token puede haber llegado antes del login: se guarda ahora.
+                    await MessagingService.shared.syncToken()
+                }
                 self?.isRestoringSession = false
             }
         }
