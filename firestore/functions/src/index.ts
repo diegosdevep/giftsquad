@@ -526,3 +526,159 @@ export const joinGroupByCode = onCall({ enforceAppCheck: true }, async (request)
 
   return { groupId: grupo.id };
 });
+
+const ADMIN_EMAILS = ["diegoshhh@gmail.com", "testappleuser.24@gmail.com"];
+
+const aMillis = (valor: unknown): number | null =>
+  valor && typeof (valor as { toMillis?: unknown }).toMillis === "function"
+    ? (valor as { toMillis: () => number }).toMillis()
+    : null;
+
+export const adminOverview = onCall(async (request) => {
+  const email = request.auth?.token?.email?.toLowerCase();
+  if (!request.auth || !email || request.auth.token.email_verified !== true || !ADMIN_EMAILS.includes(email)) {
+    throw new HttpsError("permission-denied", "No tenés acceso al panel de administración.");
+  }
+
+  const [usersSnap, groupsSnap, itemsSnap, reservasSnap, historySnap, eventosSnap] = await Promise.all([
+    db.collection("users").get(),
+    db.collection("groups").get(),
+    db.collection("items").get(),
+    db.collection("reservations").get(),
+    db.collection("history").get(),
+    db.collection("secretSantaEvents").get(),
+  ]);
+  const auth = getAuth();
+  const ultimoIngreso = new Map<string, { lastSignIn: number | null; provider: string | null; disabled: boolean }>();
+  let pageToken: string | undefined;
+  do {
+    const page = await auth.listUsers(1000, pageToken);
+    for (const u of page.users) {
+      const ms = u.metadata.lastSignInTime ? Date.parse(u.metadata.lastSignInTime) : NaN;
+      ultimoIngreso.set(u.uid, {
+        lastSignIn: Number.isNaN(ms) ? null : ms,
+        provider: u.providerData[0]?.providerId ?? null,
+        disabled: u.disabled,
+      });
+    }
+    pageToken = page.pageToken;
+  } while (pageToken);
+
+  const itemsPorDueno = new Map<string, number>();
+  for (const d of itemsSnap.docs) {
+    const o = d.data().ownerId as string;
+    itemsPorDueno.set(o, (itemsPorDueno.get(o) ?? 0) + 1);
+  }
+
+  const users = usersSnap.docs.map((d) => {
+    const x = d.data();
+    const a = ultimoIngreso.get(d.id);
+    return {
+      id: d.id,
+      displayName: (x.displayName as string) ?? "",
+      email: (x.email as string) ?? "",
+      username: (x.username as string) ?? "",
+      photoURL: (x.photoURL as string) ?? null,
+      language: (x.language as string) ?? null,
+      groupCount: ((x.groupIds as string[] | undefined) ?? []).length,
+      itemCount: itemsPorDueno.get(d.id) ?? 0,
+      hasPush: ((x.fcmTokens as string[] | undefined) ?? []).length > 0,
+      createdAt: aMillis(x.createdAt),
+      lastSignIn: a?.lastSignIn ?? null,
+      provider: a?.provider ?? null,
+      disabled: a?.disabled ?? false,
+    };
+  });
+
+  const fotoDe = new Map(users.map((u) => [u.id, u.photoURL]));
+  const nombreDe = new Map(users.map((u) => [u.id, u.displayName || u.email || u.id]));
+
+  const groups = groupsSnap.docs.map((d) => {
+    const x = d.data();
+    const memberIds = (x.memberIds as string[] | undefined) ?? [];
+    return {
+      id: d.id,
+      name: (x.name as string) ?? "",
+      emoji: (x.emoji as string) ?? null,
+      ownerId: x.ownerId as string,
+      ownerName: nombreDe.get(x.ownerId as string) ?? (x.ownerId as string),
+      inviteCode: (x.inviteCode as string) ?? "",
+      createdAt: aMillis(x.createdAt),
+      members: memberIds.map((id) => ({ id, name: nombreDe.get(id) ?? id, photoURL: fotoDe.get(id) ?? null })),
+      itemCount: itemsSnap.docs.filter((i) => ((i.data().groupIds as string[] | undefined) ?? []).includes(d.id)).length,
+    };
+  });
+
+  const items = itemsSnap.docs.map((d) => {
+    const x = d.data();
+    return {
+      id: d.id,
+      name: (x.name as string) ?? "",
+      ownerId: x.ownerId as string,
+      ownerName: nombreDe.get(x.ownerId as string) ?? (x.ownerId as string),
+      groupIds: (x.groupIds as string[] | undefined) ?? [],
+      price: typeof x.price === "number" ? x.price : null,
+      currency: (x.currency as string) ?? "ARS",
+      priority: (x.priority as string) ?? "medium",
+      category: (x.category as string) ?? null,
+      link: (x.link as string) ?? null,
+      imageURL: (x.imageURL as string) ?? null,
+      isArchived: x.isArchived === true,
+      createdAt: aMillis(x.createdAt),
+    };
+  });
+  const reservasPorEstado: Record<string, number> = {};
+  for (const d of reservasSnap.docs) {
+    const s = (d.data().status as string) ?? "reserved";
+    reservasPorEstado[s] = (reservasPorEstado[s] ?? 0) + 1;
+  }
+
+  const eventosPorEstado: Record<string, number> = {};
+  for (const d of eventosSnap.docs) {
+    const s = (d.data().status as string) ?? "draft";
+    eventosPorEstado[s] = (eventosPorEstado[s] ?? 0) + 1;
+  }
+
+  const ahora = Date.now();
+  const DIA = 24 * 60 * 60 * 1000;
+  const activos = (dias: number) =>
+    users.filter((u) => u.lastSignIn !== null && ahora - u.lastSignIn <= dias * DIA).length;
+
+  const itemsPorPrioridad: Record<string, number> = {};
+  for (const i of items) itemsPorPrioridad[i.priority] = (itemsPorPrioridad[i.priority] ?? 0) + 1;
+  const altas: Record<string, number> = {};
+  for (const u of users) {
+    if (u.createdAt && ahora - u.createdAt <= 30 * DIA) {
+      const dia = new Date(u.createdAt).toISOString().slice(0, 10);
+      altas[dia] = (altas[dia] ?? 0) + 1;
+    }
+  }
+
+  return {
+    generatedAt: ahora,
+    stats: {
+      users: users.length,
+      activeLast1d: activos(1),
+      activeLast7d: activos(7),
+      activeLast30d: activos(30),
+      groups: groups.length,
+      items: items.length,
+      itemsArchived: items.filter((i) => i.isArchived).length,
+      itemsWithoutGroup: items.filter((i) => i.groupIds.length === 0).length,
+      reservations: reservasSnap.size,
+      reservationsByStatus: reservasPorEstado,
+      history: historySnap.size,
+      secretSantaEvents: eventosSnap.size,
+      secretSantaByStatus: eventosPorEstado,
+      itemsByPriority: itemsPorPrioridad,
+      signupsLast30d: altas,
+      avgItemsPerUser: users.length ? Number((items.length / users.length).toFixed(1)) : 0,
+      avgMembersPerGroup: groups.length
+        ? Number((groups.reduce((n, g) => n + g.members.length, 0) / groups.length).toFixed(1))
+        : 0,
+    },
+    users,
+    groups,
+    items,
+  };
+});
