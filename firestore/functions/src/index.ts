@@ -4,7 +4,7 @@ import { getAuth } from "firebase-admin/auth";
 import { getMessaging } from "firebase-admin/messaging";
 import { getStorage } from "firebase-admin/storage";
 import { onDocumentCreated, onDocumentDeleted, onDocumentUpdated } from "firebase-functions/v2/firestore";
-import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onCall, HttpsError, CallableRequest } from "firebase-functions/v2/https";
 import { setGlobalOptions } from "firebase-functions/v2/options";
 
 initializeApp();
@@ -374,6 +374,11 @@ export const deleteAccount = onCall({ enforceAppCheck: true }, async (request) =
     throw new HttpsError("unauthenticated", "Necesitás estar logueado.");
   }
 
+  await eliminarCuenta(uid);
+  return { ok: true };
+});
+
+async function eliminarCuenta(uid: string) {
   const borrarEnTandas = async (docs: FirebaseFirestore.DocumentReference[]) => {
     for (let i = 0; i < docs.length; i += 400) {
       const batch = db.batch();
@@ -487,10 +492,12 @@ export const deleteAccount = onCall({ enforceAppCheck: true }, async (request) =
 
   // 7. Último: la cuenta de Auth. Con el Admin SDK no hace falta que el usuario
   //    se vuelva a loguear para confirmar.
-  await getAuth().deleteUser(uid);
-
-  return { ok: true };
-});
+  await getAuth()
+    .deleteUser(uid)
+    .catch((e) => {
+      if (e?.code !== "auth/user-not-found") throw e;
+    });
+}
 
 /**
  * Suma al usuario autenticado a un grupo a partir de su código de invitación.
@@ -527,7 +534,144 @@ export const joinGroupByCode = onCall({ enforceAppCheck: true }, async (request)
   return { groupId: grupo.id };
 });
 
-const ADMIN_EMAILS = ["diegoshhh@gmail.com", "testappleuser.24@gmail.com"];
+const ADMIN_SEMILLA = ["diegoshhh@gmail.com", "testappleuser.24@gmail.com"];
+const adminsRef = db.collection("admins");
+
+async function asegurarAdmins() {
+  const snap = await adminsRef.limit(1).get();
+  if (!snap.empty) return;
+  const batch = db.batch();
+  for (const email of ADMIN_SEMILLA) {
+    batch.set(adminsRef.doc(email), { email, addedAt: FieldValue.serverTimestamp(), addedBy: "semilla" }, { merge: true });
+  }
+  await batch.commit();
+}
+
+async function exigirAdmin(request: CallableRequest): Promise<{ uid: string; email: string }> {
+  const email = request.auth?.token?.email?.toLowerCase();
+  if (!request.auth || !email || request.auth.token.email_verified !== true) {
+    throw new HttpsError("permission-denied", "No tenés acceso al panel de administración.");
+  }
+  await asegurarAdmins();
+  const doc = await adminsRef.doc(email).get();
+  if (!doc.exists) {
+    throw new HttpsError("permission-denied", "No tenés acceso al panel de administración.");
+  }
+  return { uid: request.auth.uid, email };
+}
+
+async function registrarAccion(accion: string, actor: string, objetivo: string) {
+  await db.collection("adminLog").add({ accion, actor, objetivo, at: FieldValue.serverTimestamp() });
+}
+
+async function emailDeUsuario(uid: string): Promise<string | null> {
+  const u = await getAuth()
+    .getUser(uid)
+    .catch(() => null);
+  if (u?.email) return u.email.toLowerCase();
+  const doc = await db.collection("users").doc(uid).get();
+  const email = doc.data()?.email as string | undefined;
+  return email ? email.toLowerCase() : null;
+}
+
+async function exigirNoAdmin(uid: string) {
+  const email = await emailDeUsuario(uid);
+  if (email && (await adminsRef.doc(email).get()).exists) {
+    throw new HttpsError("failed-precondition", "Primero quitale el rol de admin a esa cuenta.");
+  }
+}
+
+function validarUid(valor: unknown): string {
+  if (typeof valor !== "string" || valor.length < 6 || valor.length > 128) {
+    throw new HttpsError("invalid-argument", "Usuario inválido.");
+  }
+  return valor;
+}
+
+function validarEmail(valor: unknown): string {
+  const email = typeof valor === "string" ? valor.trim().toLowerCase() : "";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+    throw new HttpsError("invalid-argument", "Ingresá un email válido.");
+  }
+  return email;
+}
+
+export const adminSetUserDisabled = onCall({ enforceAppCheck: true }, async (request) => {
+  const actor = await exigirAdmin(request);
+  const uid = validarUid(request.data?.uid);
+  const pausar = request.data?.disabled === true;
+  if (uid === actor.uid) {
+    throw new HttpsError("failed-precondition", "No podés pausar tu propia cuenta.");
+  }
+  if (pausar) await exigirNoAdmin(uid);
+  try {
+    await getAuth().updateUser(uid, { disabled: pausar });
+  } catch (e) {
+    if ((e as { code?: string })?.code === "auth/user-not-found") {
+      throw new HttpsError("not-found", "Ese usuario no tiene cuenta de acceso.");
+    }
+    throw e;
+  }
+  if (pausar) await getAuth().revokeRefreshTokens(uid);
+  await registrarAccion(pausar ? "pausar" : "reactivar", actor.email, uid);
+  return { ok: true };
+});
+
+export const adminDeleteUser = onCall({ enforceAppCheck: true, timeoutSeconds: 300 }, async (request) => {
+  const actor = await exigirAdmin(request);
+  const uid = validarUid(request.data?.uid);
+  if (uid === actor.uid) {
+    throw new HttpsError("failed-precondition", "No podés eliminar tu propia cuenta desde el panel.");
+  }
+  await exigirNoAdmin(uid);
+  await registrarAccion("eliminar", actor.email, uid);
+  await eliminarCuenta(uid);
+  return { ok: true };
+});
+
+export const adminAddAdmin = onCall({ enforceAppCheck: true }, async (request) => {
+  const actor = await exigirAdmin(request);
+  const email = validarEmail(request.data?.email);
+  let cuenta;
+  try {
+    cuenta = await getAuth().getUserByEmail(email);
+  } catch {
+    throw new HttpsError("not-found", "No hay ninguna cuenta con ese email. La persona tiene que haber entrado a GiftSquad antes.");
+  }
+  if (!cuenta.emailVerified) {
+    throw new HttpsError("failed-precondition", "El email de esa cuenta no está verificado.");
+  }
+  if (cuenta.disabled) {
+    throw new HttpsError("failed-precondition", "Esa cuenta está pausada.");
+  }
+  const ref = adminsRef.doc(email);
+  if ((await ref.get()).exists) {
+    throw new HttpsError("already-exists", "Esa cuenta ya es admin.");
+  }
+  await ref.set({ email, addedAt: FieldValue.serverTimestamp(), addedBy: actor.email });
+  await registrarAccion("agregar-admin", actor.email, email);
+  return { ok: true };
+});
+
+export const adminRemoveAdmin = onCall({ enforceAppCheck: true }, async (request) => {
+  const actor = await exigirAdmin(request);
+  const email = validarEmail(request.data?.email);
+  if (email === actor.email) {
+    throw new HttpsError("failed-precondition", "No podés quitarte el rol a vos mismo.");
+  }
+  await db.runTransaction(async (tx) => {
+    const todos = await tx.get(adminsRef);
+    const existe = todos.docs.some((d) => d.id === email);
+    const actorSigue = todos.docs.some((d) => d.id === actor.email);
+    if (!existe) throw new HttpsError("not-found", "Esa cuenta no es admin.");
+    if (!actorSigue || todos.size <= 1) {
+      throw new HttpsError("failed-precondition", "Tiene que haber al menos un admin.");
+    }
+    tx.delete(adminsRef.doc(email));
+  });
+  await registrarAccion("quitar-admin", actor.email, email);
+  return { ok: true };
+});
 
 const aMillis = (valor: unknown): number | null =>
   valor && typeof (valor as { toMillis?: unknown }).toMillis === "function"
@@ -535,10 +679,9 @@ const aMillis = (valor: unknown): number | null =>
     : null;
 
 export const adminOverview = onCall(async (request) => {
-  const email = request.auth?.token?.email?.toLowerCase();
-  if (!request.auth || !email || request.auth.token.email_verified !== true || !ADMIN_EMAILS.includes(email)) {
-    throw new HttpsError("permission-denied", "No tenés acceso al panel de administración.");
-  }
+  const yo = await exigirAdmin(request);
+  const adminsSnap = await adminsRef.get();
+  const emailsAdmin = new Set(adminsSnap.docs.map((d) => d.id));
 
   const [usersSnap, groupsSnap, itemsSnap, reservasSnap, historySnap, eventosSnap] = await Promise.all([
     db.collection("users").get(),
@@ -587,8 +730,24 @@ export const adminOverview = onCall(async (request) => {
       lastSignIn: a?.lastSignIn ?? null,
       provider: a?.provider ?? null,
       disabled: a?.disabled ?? false,
+      isAdmin: emailsAdmin.has(((x.email as string) ?? "").toLowerCase()),
     };
   });
+
+  const admins = adminsSnap.docs
+    .map((d) => {
+      const x = d.data();
+      const u = users.find((c) => c.email.toLowerCase() === d.id);
+      return {
+        email: d.id,
+        uid: u?.id ?? null,
+        name: u?.displayName ?? "",
+        photoURL: u?.photoURL ?? null,
+        addedBy: (x.addedBy as string) ?? "",
+        addedAt: aMillis(x.addedAt),
+      };
+    })
+    .sort((a, b) => (a.addedAt ?? 0) - (b.addedAt ?? 0));
 
   const fotoDe = new Map(users.map((u) => [u.id, u.photoURL]));
   const nombreDe = new Map(users.map((u) => [u.id, u.displayName || u.email || u.id]));
@@ -639,6 +798,32 @@ export const adminOverview = onCall(async (request) => {
     eventosPorEstado[s] = (eventosPorEstado[s] ?? 0) + 1;
   }
 
+  const amigoInvisible = eventosSnap.docs
+    .map((d) => {
+      const x = d.data();
+      const participantes = (x.participantIds as string[] | undefined) ?? [];
+      return {
+        id: d.id,
+        name: (x.name as string) ?? "",
+        status: (x.status as string) ?? "draft",
+        organizerId: (x.createdBy as string) ?? "",
+        organizerName: nombreDe.get(x.createdBy as string) ?? "—",
+        participants: participantes.map((id) => ({ id, name: nombreDe.get(id) ?? id, photoURL: fotoDe.get(id) ?? null })),
+        exclusions: ((x.exclusions as { fromUserId?: string; toUserId?: string }[] | undefined) ?? [])
+          .filter((r) => r.fromUserId && r.toUserId)
+          .map((r) => ({
+            from: nombreDe.get(r.fromUserId as string) ?? (r.fromUserId as string),
+            to: nombreDe.get(r.toUserId as string) ?? (r.toUserId as string),
+          })),
+        budget: typeof x.budget === "number" ? x.budget : null,
+        currency: (x.currency as string) ?? "ARS",
+        exchangeDate: aMillis(x.exchangeDate),
+        createdAt: aMillis(x.createdAt),
+        drawnAt: aMillis(x.drawnAt),
+      };
+    })
+    .sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0));
+
   const ahora = Date.now();
   const DIA = 24 * 60 * 60 * 1000;
   const activos = (dias: number) =>
@@ -680,5 +865,8 @@ export const adminOverview = onCall(async (request) => {
     users,
     groups,
     items,
+    secretSanta: amigoInvisible,
+    admins,
+    me: yo,
   };
 });
