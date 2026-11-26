@@ -130,10 +130,10 @@ extension FirestoreService {
         return try await group(groupId).getDocument().data(as: GiftGroup.self)
     }
 
-    func updateGroup(_ groupId: String, name: String, emoji: String) async throws {
+    func updateGroup(_ groupId: String, name: String, icon: String) async throws {
         try await group(groupId).updateData([
             "name": name,
-            "emoji": emoji
+            "icon": icon
         ])
     }
 

@@ -9,22 +9,22 @@ enum GSShare {
 
     static func invitacionGrupo(nombre: String, codigo: String) -> String {
         [
-            LanguageService.t("🎁 ¡Sumate a mi grupo \(nombre) en GiftSquad!"),
+            LanguageService.t("¡Sumate a mi grupo \(nombre) en GiftSquad!"),
             LanguageService.t("Ahí armamos nuestras listas de deseos y coordinamos los regalos sin arruinar ninguna sorpresa."),
             "",
-            LanguageService.t("1️⃣ Descargá la app: \(appStoreURL.absoluteString)"),
-            LanguageService.t("2️⃣ Entrá a Grupos, tocá + y elegí \"Sumarme con código\"."),
-            LanguageService.t("3️⃣ Ingresá el código: *\(codigo)*"),
+            LanguageService.t("1. Descargá la app: \(appStoreURL.absoluteString)"),
+            LanguageService.t("2. Entrá a Grupos, tocá + y elegí \"Sumarme con código\"."),
+            LanguageService.t("3. Ingresá el código: *\(codigo)*"),
         ].joined(separator: "\n")
     }
 
     static func codigoAmigo(_ codigo: String) -> String {
         [
-            LanguageService.t("🎁 ¡Agregame en GiftSquad!"),
+            LanguageService.t("¡Agregame en GiftSquad!"),
             LanguageService.t("Es la app que uso para armar listas de deseos y coordinar regalos con amigos y familia."),
             "",
-            LanguageService.t("1️⃣ Descargá la app: \(appStoreURL.absoluteString)"),
-            LanguageService.t("2️⃣ Con mi código de amigo me podés sumar a un grupo o a un Amigo Invisible: *\(codigo)*"),
+            LanguageService.t("1. Descargá la app: \(appStoreURL.absoluteString)"),
+            LanguageService.t("2. Con mi código de amigo me podés sumar a un grupo o a un Amigo Invisible: *\(codigo)*"),
         ].joined(separator: "\n")
     }
 }

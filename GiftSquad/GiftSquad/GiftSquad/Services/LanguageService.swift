@@ -17,11 +17,11 @@ enum GSLanguage: String, CaseIterable, Identifiable {
         }
     }
 
-    var flag: String {
+    var symbol: String {
         switch self {
-        case .system: return "🌐"
-        case .es: return "🇦🇷"
-        case .en: return "🇬🇧"
+        case .system: return "iphone"
+        case .es: return "globe.americas.fill"
+        case .en: return "globe.europe.africa.fill"
         }
     }
 }

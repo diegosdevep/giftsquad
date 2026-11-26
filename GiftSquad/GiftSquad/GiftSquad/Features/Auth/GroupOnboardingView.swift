@@ -4,7 +4,7 @@ struct GroupOnboardingView: View {
     private struct GroupChip: Identifiable, Equatable {
         let id: String
         var name: String
-        var emoji: String
+        var icon: String
         var isCustom: Bool
     }
 
@@ -55,7 +55,7 @@ struct GroupOnboardingView: View {
     private let selectedColor = GSPalette.oceano
 
     private var recommendedChips: [GroupChip] {
-        AuthService.recommendedGroups.map { GroupChip(id: $0.name, name: $0.name, emoji: $0.emoji, isCustom: false) }
+        AuthService.recommendedGroups.map { GroupChip(id: $0.name, name: $0.name, icon: $0.icon, isCustom: false) }
     }
 
     private var allChips: [GroupChip] { recommendedChips + customChips }
@@ -118,7 +118,8 @@ struct GroupOnboardingView: View {
                     Image(systemName: "checkmark")
                         .font(.system(size: 12, weight: .black))
                 } else {
-                    Text(chip.emoji).font(.system(size: 15))
+                    Image(systemName: chip.icon)
+                        .font(.system(size: 14, weight: .semibold))
                 }
                 Text(LocalizedStringKey(stringLiteral: chip.name))
                     .font(GSFont.body(15, weight: .semibold))
@@ -230,7 +231,7 @@ struct GroupOnboardingView: View {
     private func commitCustomGroup() {
         let trimmed = newGroupName.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
-        let chip = GroupChip(id: UUID().uuidString, name: trimmed, emoji: "🎁", isCustom: true)
+        let chip = GroupChip(id: UUID().uuidString, name: trimmed, icon: GroupIcon.fallback, isCustom: true)
         withAnimation(.spring(response: 0.28, dampingFraction: 0.7)) {
             customChips.append(chip)
             selectedIds.insert(chip.id)
@@ -245,9 +246,9 @@ struct GroupOnboardingView: View {
         errorMessage = nil
         defer { isSaving = false }
 
-        let selected: [(name: String, emoji: String)] = skip ? [] : allChips
+        let selected: [(name: String, icon: String)] = skip ? [] : allChips
             .filter { selectedIds.contains($0.id) }
-            .map { (name: $0.name, emoji: $0.emoji) }
+            .map { (name: $0.name, icon: $0.icon) }
 
         await auth.completeGroupOnboarding(selected: selected)
     }

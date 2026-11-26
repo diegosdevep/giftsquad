@@ -47,22 +47,22 @@ interface Plantilla {
 
 const MENSAJES: Record<MensajeId, Record<Idioma, Plantilla>> = {
   newWishlistItem: {
-    es: { title: "Nuevo en la lista 🎁", body: '{autor} agregó "{item}" a su lista' },
-    en: { title: "New on the list 🎁", body: '{autor} added "{item}" to their list' },
+    es: { title: "Nuevo en la lista", body: '{autor} agregó "{item}" a su lista' },
+    en: { title: "New on the list", body: '{autor} added "{item}" to their list' },
   },
   secretSantaDrawn: {
     es: {
-      title: "¡Ya se hizo el sorteo! 🎉",
+      title: "¡Ya se hizo el sorteo!",
       body: 'Ya podés ver a quién le tenés que regalar en "{evento}"',
     },
     en: {
-      title: "The draw is done! 🎉",
+      title: "The draw is done!",
       body: 'You can now see who you are giving a gift to in "{evento}"',
     },
   },
   secretSantaInvite: {
-    es: { title: "Amigo Invisible 🎁", body: '{organizador} te sumó a "{evento}"' },
-    en: { title: "Secret Santa 🎁", body: '{organizador} added you to "{evento}"' },
+    es: { title: "Amigo Invisible", body: '{organizador} te sumó a "{evento}"' },
+    en: { title: "Secret Santa", body: '{organizador} added you to "{evento}"' },
   },
 };
 

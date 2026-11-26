@@ -161,28 +161,28 @@ final class AuthService {
         return newUser
     }
 
-    static let recommendedGroups: [(name: String, emoji: String)] = [
-        ("Familia", "👨‍👩‍👧‍👦"),
-        ("Amigos", "🎉"),
-        ("Pareja", "💞"),
-        ("Trabajo", "💼"),
-        ("Cumpleaños", "🎂"),
-        ("Navidad", "🎄"),
-        ("Boda", "💍"),
-        ("Baby shower", "🍼"),
-        ("Graduación", "🎓"),
-        ("Vecinos", "🏠")
+    static let recommendedGroups: [(name: String, icon: String)] = [
+        ("Familia", "figure.2.and.child.holdinghands"),
+        ("Amigos", "party.popper.fill"),
+        ("Pareja", "heart.fill"),
+        ("Trabajo", "briefcase.fill"),
+        ("Cumpleaños", "birthday.cake.fill"),
+        ("Navidad", "tree.fill"),
+        ("Boda", "sparkles"),
+        ("Baby shower", "stroller.fill"),
+        ("Graduación", "graduationcap.fill"),
+        ("Vecinos", "house.fill")
     ]
 
-    func completeGroupOnboarding(selected: [(name: String, emoji: String)]) async {
+    func completeGroupOnboarding(selected: [(name: String, icon: String)]) async {
         guard let uid = currentUserId else { return }
-        for (name, emoji) in selected {
+        for (name, icon) in selected {
            
             let nombre = String(
                 localized: String.LocalizationValue(name),
                 locale: LanguageService.shared.locale
             )
-            let group = GiftGroup(name: nombre, emoji: emoji, ownerId: uid, memberIds: [uid])
+            let group = GiftGroup(name: nombre, icon: icon, ownerId: uid, memberIds: [uid])
             do {
                 _ = try await FirestoreService.shared.createGroup(group)
             } catch {

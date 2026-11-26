@@ -358,50 +358,50 @@
         }
       }
     },
-    "🎁 ¡Agregame en GiftSquad!" : {
+    "¡Agregame en GiftSquad!" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "🎁 Add me on GiftSquad!"
+            "value" : "Add me on GiftSquad!"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "🎁 ¡Agregame en GiftSquad!"
+            "value" : "¡Agregame en GiftSquad!"
           }
         }
       }
     },
-    "🎁 ¡Sumate a mi grupo %@ en GiftSquad!" : {
+    "¡Sumate a mi grupo %@ en GiftSquad!" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "🎁 Join my group %@ on GiftSquad!"
+            "value" : "Join my group %@ on GiftSquad!"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "🎁 ¡Sumate a mi grupo %@ en GiftSquad!"
+            "value" : "¡Sumate a mi grupo %@ en GiftSquad!"
           }
         }
       }
     },
-    "1️⃣ Descargá la app: %@" : {
+    "1. Descargá la app: %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1️⃣ Download the app: %@"
+            "value" : "1. Download the app: %@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1️⃣ Descargá la app: %@"
+            "value" : "1. Descargá la app: %@"
           }
         }
       }
@@ -422,50 +422,50 @@
         }
       }
     },
-    "2️⃣ Con mi código de amigo me podés sumar a un grupo o a un Amigo Invisible: *%@*" : {
+    "2. Con mi código de amigo me podés sumar a un grupo o a un Amigo Invisible: *%@*" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "2️⃣ Use my friend code to add me to a group or a Secret Santa: *%@*"
+            "value" : "2. Use my friend code to add me to a group or a Secret Santa: *%@*"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "2️⃣ Con mi código de amigo me podés sumar a un grupo o a un Amigo Invisible: *%@*"
+            "value" : "2. Con mi código de amigo me podés sumar a un grupo o a un Amigo Invisible: *%@*"
           }
         }
       }
     },
-    "2️⃣ Entrá a Grupos, tocá + y elegí \"Sumarme con código\"." : {
+    "2. Entrá a Grupos, tocá + y elegí \"Sumarme con código\"." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "2️⃣ Go to Groups, tap + and choose \"Join with a code\"."
+            "value" : "2. Go to Groups, tap + and choose \"Join with a code\"."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "2️⃣ Entrá a Grupos, tocá + y elegí \"Sumarme con código\"."
+            "value" : "2. Entrá a Grupos, tocá + y elegí \"Sumarme con código\"."
           }
         }
       }
     },
-    "3️⃣ Ingresá el código: *%@*" : {
+    "3. Ingresá el código: *%@*" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "3️⃣ Enter the code: *%@*"
+            "value" : "3. Enter the code: *%@*"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "3️⃣ Ingresá el código: *%@*"
+            "value" : "3. Ingresá el código: *%@*"
           }
         }
       }
@@ -1973,22 +1973,6 @@
         }
       }
     },
-    "Emoji" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Emoji"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Emoji"
-          }
-        }
-      }
-    },
     "Empezar" : {
       "localizations" : {
         "en" : {
@@ -2327,6 +2311,7 @@
       }
     },
     "Foto del grupo" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -2507,18 +2492,34 @@
         }
       }
     },
-    "Hola, %@ 👋" : {
+    "Hola, %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hi, %@ 👋"
+            "value" : "Hi, %@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hola, %@ 👋"
+            "value" : "Hola, %@"
+          }
+        }
+      }
+    },
+    "Ícono" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Icon"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ícono"
           }
         }
       }

@@ -4,12 +4,10 @@ import FirebaseFirestore
 struct CreateGroupView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
-    @State private var emoji = "🎁"
+    @State private var icon = GroupIcon.fallback
     @State private var isLoading = false
     @State private var errorMessage: String?
 
-    private let emojis = ["🎁", "🎉", "🎄", "🎂", "💝", "🦄", "🌟", "🍰"]
-    private let emojiColumns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 4)
 
     var body: some View {
         NavigationStack {
@@ -28,34 +26,11 @@ struct CreateGroupView: View {
                         }
 
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("Emoji")
+                            Text("Ícono")
                                 .font(GSFont.caption())
                                 .foregroundStyle(GSPalette.grafito)
 
-                            LazyVGrid(columns: emojiColumns, spacing: 10) {
-                                ForEach(emojis, id: \.self) { option in
-                                    Button {
-                                        emoji = option
-                                    } label: {
-                                        Text(option)
-                                            .font(.system(size: 26))
-                                            .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 12)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                                    .fill(emoji == option ? GSPalette.oceano.opacity(0.14) : Color.white)
-                                            )
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                                    .strokeBorder(
-                                                        emoji == option ? GSPalette.oceano : GSPalette.grafito.opacity(0.15),
-                                                        lineWidth: emoji == option ? 2 : 1
-                                                    )
-                                            )
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
+                            GroupIconPicker(selection: $icon)
                         }
 
                         if let errorMessage {
@@ -93,7 +68,7 @@ struct CreateGroupView: View {
         do {
             let group = GiftGroup(
                 name: name.trimmingCharacters(in: .whitespaces),
-                emoji: emoji,
+                icon: icon,
                 ownerId: uid,
                 memberIds: [uid]
             )

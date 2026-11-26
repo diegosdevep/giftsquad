@@ -7,18 +7,15 @@ struct EditGroupView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var name: String
-    @State private var emoji: String
+    @State private var icon: String
     @State private var isLoading = false
     @State private var errorMessage: String?
-
-    private let emojis = ["🎁", "🎉", "🎄", "🎂", "💝", "🦄", "🌟", "🍰", "👨‍👩‍👧‍👦", "🏠", "❤️", "✨"]
-    private let emojiColumns = Array(repeating: GridItem(.flexible(), spacing: 10), count: 4)
 
     init(group: GiftGroup, onSaved: @escaping (GiftGroup) -> Void) {
         self.group = group
         self.onSaved = onSaved
         _name = State(initialValue: group.name)
-        _emoji = State(initialValue: group.emoji ?? "🎁")
+        _icon = State(initialValue: group.iconSymbol)
     }
 
     var body: some View {
@@ -38,34 +35,11 @@ struct EditGroupView: View {
                         }
 
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("Foto del grupo")
+                            Text("Ícono")
                                 .font(GSFont.caption())
                                 .foregroundStyle(GSPalette.grafito)
 
-                            LazyVGrid(columns: emojiColumns, spacing: 10) {
-                                ForEach(emojis, id: \.self) { option in
-                                    Button {
-                                        emoji = option
-                                    } label: {
-                                        Text(option)
-                                            .font(.system(size: 26))
-                                            .frame(maxWidth: .infinity)
-                                            .padding(.vertical, 12)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                                    .fill(emoji == option ? GSPalette.oceano.opacity(0.14) : Color.white)
-                                            )
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                                    .strokeBorder(
-                                                        emoji == option ? GSPalette.oceano : GSPalette.grafito.opacity(0.15),
-                                                        lineWidth: emoji == option ? 2 : 1
-                                                    )
-                                            )
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
+                            GroupIconPicker(selection: $icon)
                         }
 
                         if let errorMessage {
@@ -103,10 +77,10 @@ struct EditGroupView: View {
         errorMessage = nil
         defer { isLoading = false }
         do {
-            try await FirestoreService.shared.updateGroup(groupId, name: trimmedName, emoji: emoji)
+            try await FirestoreService.shared.updateGroup(groupId, name: trimmedName, icon: icon)
             var updated = group
             updated.name = trimmedName
-            updated.emoji = emoji
+            updated.icon = icon
             onSaved(updated)
             dismiss()
         } catch {
@@ -116,5 +90,5 @@ struct EditGroupView: View {
 }
 
 #Preview {
-    EditGroupView(group: GiftGroup(name: "Familia", emoji: "👨‍👩‍👧‍👦", ownerId: "x", memberIds: ["x"])) { _ in }
+    EditGroupView(group: GiftGroup(name: "Familia", icon: "figure.2.and.child.holdinghands", ownerId: "x", memberIds: ["x"])) { _ in }
 }

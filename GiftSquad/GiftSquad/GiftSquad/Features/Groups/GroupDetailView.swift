@@ -246,8 +246,9 @@ struct GroupDetailView: View {
                 Circle()
                     .fill(GSPalette.crema)
                     .frame(width: 80, height: 80)
-                Text(group.emoji ?? "🎁")
-                    .font(.system(size: 38))
+                Image(systemName: group.iconSymbol)
+                    .font(.system(size: 36, weight: .semibold))
+                    .foregroundStyle(GSPalette.noche)
             }
             .shadow(color: GSPalette.noche.opacity(0.14), radius: 10, y: 4)
 

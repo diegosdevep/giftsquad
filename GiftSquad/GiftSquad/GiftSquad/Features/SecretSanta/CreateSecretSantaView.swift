@@ -77,8 +77,8 @@ struct CreateSecretSantaView: View {
                                                     currency = c.rawValue
                                                 } label: {
                                                     VStack(spacing: 2) {
-                                                        Text(c.flag)
-                                                            .font(.system(size: 16))
+                                                        Image(systemName: c.symbol)
+                                                            .font(.system(size: 16, weight: .semibold))
                                                         Text(c.rawValue)
                                                             .font(GSFont.body(11, weight: .bold))
                                                     }
@@ -350,7 +350,7 @@ struct CreateSecretSantaView: View {
 
     private var whatsAppInviteMessage: String {
         let code = AuthService.shared.appUser?.friendCode ?? ""
-        return "Te sumo a nuestro Amigo Invisible en GiftSquad 🎁 Descargate la app y agregame con mi código: \(code)"
+        return "Te sumo a nuestro Amigo Invisible en GiftSquad. Descargate la app y agregame con mi código: \(code)"
     }
 
     private func loadMyGroupMembers() async {

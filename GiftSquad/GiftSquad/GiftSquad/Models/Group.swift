@@ -5,6 +5,7 @@ struct GiftGroup: Codable, Identifiable, Hashable {
     @DocumentID var id: String?
     var name: String
     var emoji: String?
+    var icon: String?
     var ownerId: String
     var memberIds: [String]
     var inviteCode: String
@@ -14,6 +15,7 @@ struct GiftGroup: Codable, Identifiable, Hashable {
         id: String? = nil,
         name: String,
         emoji: String? = nil,
+        icon: String? = nil,
         ownerId: String,
         memberIds: [String] = [],
         inviteCode: String = Self.makeInviteCode(),
@@ -22,11 +24,14 @@ struct GiftGroup: Codable, Identifiable, Hashable {
         self.id = id
         self.name = name
         self.emoji = emoji
+        self.icon = icon
         self.ownerId = ownerId
         self.memberIds = memberIds
         self.inviteCode = inviteCode
         self.createdAt = createdAt
     }
+
+    var iconSymbol: String { GroupIcon.symbol(icon: icon, emoji: emoji) }
 
     static func makeInviteCode(length: Int = 8) -> String {
         let alphabet = Array("ABCDEFGHJKLMNPQRSTUVWXYZ23456789")

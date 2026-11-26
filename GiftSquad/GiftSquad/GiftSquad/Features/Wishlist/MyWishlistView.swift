@@ -7,7 +7,7 @@ struct MyWishlistView: View {
     @State private var isLoading = true
     @State private var showAdd = false
     @State private var groupNames: [String: String] = [:]
-    @State private var groupEmojis: [String: String] = [:]
+    @State private var groupIcons: [String: String] = [:]
     @State private var itemPendingDelete: WishlistItem?
     @State private var selectedFilter: ListFilter = .all
     @State private var errorMessage: String?
@@ -234,14 +234,14 @@ struct MyWishlistView: View {
             if !groupIdsWithItems.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        filterChip(title: "Todas", emoji: nil, count: items.count, isSelected: selectedFilter == .all) {
+                        filterChip(title: "Todas", icon: nil, count: items.count, isSelected: selectedFilter == .all) {
                             selectedFilter = .all
                         }
                         ForEach(groupIdsWithItems, id: \.self) { groupId in
                             let count = items.filter { $0.groupIds.contains(groupId) }.count
                             filterChip(
                                 title: LocalizedStringKey(stringLiteral: groupNames[groupId] ?? "Grupo"),
-                                emoji: groupEmojis[groupId],
+                                icon: groupIcons[groupId],
                                 count: count,
                                 isSelected: selectedFilter == .group(id: groupId)
                             ) {
@@ -280,11 +280,12 @@ struct MyWishlistView: View {
         .buttonStyle(.plain)
     }
 
-    private func filterChip(title: LocalizedStringKey, emoji: String?, count: Int, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    private func filterChip(title: LocalizedStringKey, icon: String?, count: Int, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 6) {
-                if let emoji {
-                    Text(emoji).font(.system(size: 13))
+                if let icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 12, weight: .semibold))
                 }
                 Text(title)
                     .font(GSFont.body(13, weight: .bold))
@@ -331,14 +332,14 @@ struct MyWishlistView: View {
                 .whereField("memberIds", arrayContains: uid)
                 .getDocuments()
             var names: [String: String] = [:]
-            var emojis: [String: String] = [:]
+            var icons: [String: String] = [:]
             for doc in snap.documents {
                 guard let group = try? doc.data(as: GiftGroup.self), let id = group.id else { continue }
                 names[id] = group.name
-                emojis[id] = group.emoji
+                icons[id] = group.iconSymbol
             }
             self.groupNames = names
-            self.groupEmojis = emojis
+            self.groupIcons = icons
         } catch {
             Logger.shared.error("loadGroupNames: \(error)")
         }

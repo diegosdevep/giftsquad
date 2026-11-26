@@ -227,7 +227,7 @@ struct GroupsListView: View {
                 }
             } else {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Hola, \(firstName) 👋")
+                    Text("Hola, \(firstName)")
                         .font(GSFont.display(22))
                         .foregroundStyle(GSPalette.noche)
                     Text(greetingSubtitle)
@@ -612,8 +612,9 @@ private struct GroupCircleTile: View {
         VStack(spacing: 8) {
             ZStack {
                 Circle().fill(tint.opacity(0.20)).frame(width: 72, height: 72)
-                Text(group.emoji ?? "🎁")
-                    .font(.system(size: 30))
+                Image(systemName: group.iconSymbol)
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(tint)
             }
             .overlay(Circle().strokeBorder(metallicRing, lineWidth: 2.5))
             .overlay(Circle().strokeBorder(.white.opacity(0.6), lineWidth: 0.75).blur(radius: 0.5).padding(1.5))

@@ -119,7 +119,10 @@ struct ProfileView: View {
                                     language.selection = idioma
                                 } label: {
                                     HStack(spacing: 12) {
-                                        Text(idioma.flag).font(.system(size: 20))
+                                        Image(systemName: idioma.symbol)
+                                            .font(.system(size: 18, weight: .semibold))
+                                            .foregroundStyle(GSPalette.noche)
+                                            .frame(width: 26)
                                         Text(idioma.displayName)
                                             .font(GSFont.body(15, weight: .semibold))
                                             .foregroundStyle(GSPalette.noche)

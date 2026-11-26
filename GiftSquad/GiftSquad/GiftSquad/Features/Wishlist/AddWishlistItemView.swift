@@ -10,12 +10,12 @@ enum GSCurrency: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var flag: String {
+    var symbol: String {
         switch self {
-        case .ars: return "🇦🇷"
-        case .usd: return "🇺🇸"
-        case .eur: return "🇪🇺"
-        case .dkk: return "🇩🇰"
+        case .ars: return "pesosign.circle.fill"
+        case .usd: return "dollarsign.circle.fill"
+        case .eur: return "eurosign.circle.fill"
+        case .dkk: return "danishkronesign.circle.fill"
         }
     }
 
@@ -305,8 +305,8 @@ struct AddWishlistItemView: View {
                                                     currency = c.rawValue
                                                 } label: {
                                                     VStack(spacing: 2) {
-                                                        Text(c.flag)
-                                                            .font(.system(size: 16))
+                                                        Image(systemName: c.symbol)
+                                                            .font(.system(size: 16, weight: .semibold))
                                                         Text(c.rawValue)
                                                             .font(GSFont.body(11, weight: .bold))
                                                     }
@@ -482,8 +482,9 @@ struct AddWishlistItemView: View {
                         Circle()
                             .fill(tint.opacity(isSelected ? 0.22 : 0.14))
                             .frame(width: 60, height: 60)
-                        Text(group.emoji ?? "🎁")
-                            .font(.system(size: 26))
+                        Image(systemName: group.iconSymbol)
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundStyle(tint)
                     }
                     .overlay(
                         Circle().strokeBorder(isSelected ? tint : GSPalette.grafito.opacity(0.3), style: StrokeStyle(lineWidth: isSelected ? 2.5 : 1.5, dash: isSelected ? [] : [4, 3]))
